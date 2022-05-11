@@ -168,7 +168,7 @@ class DESTest(unittest.TestCase):
             DESTest.sim.reset()
             DESTest.sim.sim_param.SEED = seed
             random.seed(seed)
-            self.assertEqual(DESTest.sim.do_simulation().packets_dropped, results[seed],
+            self.assertEqual(results[seed], DESTest.sim.do_simulation().packets_dropped,
                              msg="Error in Simulation. Wrong number of dropped packets for given seed.")
 
 

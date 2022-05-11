@@ -47,12 +47,22 @@ def do_simulation_study(sim):
     """
     Implement according to task description.
     """
-    # TODO Task 1.7.1: Your code goes here
 
-    return sim.sim_param.S
+    for queue_size in range(4, 10):
+        success_runs = 0
+        runs = sim.sim_param.NO_OF_RUNS
+        sim.sim_param.S = queue_size
+        for i in range(0, runs):
+            result = sim.do_simulation().packets_dropped
+            if result < sim.sim_param.MAX_DROPPED:
+                success_runs += 1
+            sim.reset()
+
+        if (success_runs / runs * 100) > 80:
+            return queue_size
 
 
 if __name__ == '__main__':
-    task_1_7_1()
-    task_1_7_2()
+    # print(task_1_7_1())
+    print(task_1_7_2())
     task_1_7_3()

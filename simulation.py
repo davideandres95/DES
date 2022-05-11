@@ -62,6 +62,7 @@ class Simulation(object):
         # insert first and last event
         self.event_chain.insert(CustomerArrival(self, 0))
         self.event_chain.insert(SimulationTermination(self, self.sim_param.SIM_TIME))
+        event_chain_log = []
 
         # start simulation (run)
         while not self.sim_state.stop:
@@ -73,9 +74,12 @@ class Simulation(object):
             e = self.event_chain.remove_oldest_event()
             e.process()
             """
+
             e = self.event_chain.remove_oldest_event()
+            event_chain_log.append(e)
             e.process()
-            self.sim_state.now += 1
+            self.sim_state.now = e.timestamp
+
             # TODO Task 2.4.3: Your code goes here somewhere
 
         # gather results for sim_result object

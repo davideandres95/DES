@@ -22,7 +22,7 @@ class SimParam(object):
         self.MAX_DROPPED = 10
 
         # set seed for random number generation
-        self.SEED = 0
+        self.SEED = 3755457
         self.SEED_IAT = 0
         self.SEED_ST = 3755457
 

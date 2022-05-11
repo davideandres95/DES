@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 from heapq import heappush, heappop
 from random import randint
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from simulation import Simulation
 
 
 class EventChain(object):
@@ -88,11 +94,12 @@ class CustomerArrival(SimEvent):
         sys_state = self.sim.system_state
         sim_state = self.sim.sim_state
         event_chain = self.sim.event_chain
-        completion_time = sim_state.now + randint(0, 1000)
-        ia_time = sim_state.now + self.sim.sim_param.IAT
+
+        ia_time = self.timestamp + self.sim.sim_param.IAT
 
         if sys_state.add_packet_to_server():  # Server is idle
             sim_state.packet_accepted()
+            completion_time = self.timestamp + randint(1, 1000)
             event_chain.insert(ServiceCompletion(sim=self.sim, timestamp=completion_time))
         else:  # system is busy
             if sys_state.add_packet_to_queue():  # Enqueue packet
@@ -126,14 +133,12 @@ class ServiceCompletion(SimEvent):
         """
         sys_state = self.sim.system_state
         event_chain = self.sim.event_chain
-        sim_state = self.sim.sim_state
-        completion_time = sim_state.now + randint(0, 1000)
 
-        if sys_state.buffer_content == 0:
-            sys_state.complete_service()
-        elif sys_state.buffer_content > 0:
-            sys_state.start_service()
+        if sys_state.start_service():  # there are packets in the buffer
+            completion_time = self.timestamp + randint(1, 1000)
             event_chain.insert(ServiceCompletion(sim=self.sim, timestamp=completion_time))
+        else:
+            sys_state.complete_service()
 
 
 class SimulationTermination(SimEvent):
