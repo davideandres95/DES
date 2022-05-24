@@ -1,4 +1,5 @@
-import numpy
+# Student Name: David de Andres Hernandez
+# Matriculation Number: 3755457
 
 from simparam import SimParam
 from simulation import Simulation
@@ -109,6 +110,6 @@ def do_simulation_study(sim):
 
 
 if __name__ == '__main__':
-    print(task_1_7_1())
-    print(task_1_7_2())
+    task_1_7_1()
+    task_1_7_2()
     task_1_7_3()
