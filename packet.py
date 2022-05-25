@@ -28,44 +28,44 @@ class Packet(object):
         """
         Change the status of the packet once the serving process starts.
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        self.t_start = self.sim.sim_state.now
+        self.waiting = False
+        self.served = True
 
     def complete_service(self):
         """
         Change the status of the packet once the serving process is completed.
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        self.t_complete = self.sim.sim_state.now
+        self.completed = True
 
     def get_waiting_time(self):
         """
         Return the waiting time of the packet. An error occurs when the packet has not been served yet.
         :return: waiting time
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        if self.served == False:
+            raise ValueError('The packet has not been served yet')
+        else:
+            return self.t_start - self.t_arrival
 
     def get_service_time(self):
         """
         Calculate and return the service time
         :return: service time
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        return self.t_complete - self.t_start
 
     def get_system_time(self):
         """
         Calculate and return the system time (waiting time + service time)
         :return: system time (waiting time + serving time)
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        return self.t_complete - self.t_arrival
 
     def get_interarrival_time(self):
         """
         Return the inter-arrival time between the current and the last customer/packet
         :return: inter-arrival time
         """
-        # TODO Task 2.1.1: Your code goes here
-        pass
+        return self.iat
