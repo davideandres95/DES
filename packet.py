@@ -37,6 +37,7 @@ class Packet(object):
         Change the status of the packet once the serving process is completed.
         """
         self.t_complete = self.sim.sim_state.now
+        self.served = False
         self.completed = True
 
     def get_waiting_time(self):
@@ -44,8 +45,8 @@ class Packet(object):
         Return the waiting time of the packet. An error occurs when the packet has not been served yet.
         :return: waiting time
         """
-        if self.served == False:
-            raise ValueError('The packet has not been served yet')
+        if self.waiting == True:
+            raise ValueError('The packet has not been served yet. Still waiting.')
         else:
             return self.t_start - self.t_arrival
 

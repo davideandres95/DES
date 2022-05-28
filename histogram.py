@@ -1,5 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import numpy
+import numpy as np
 from matplotlib import pyplot
+
+if TYPE_CHECKING:
+    from simulation import Simulation
 
 
 class Histogram(object):
@@ -20,7 +27,7 @@ class Histogram(object):
         :param typestr is mainly for the sake of distinguishing between multiple histograms but information can also
         be used for configuring the plot
         """
-        self.sim = sim
+        self.sim = sim  # type: Simulation
         self.values = []
         self.histogram = None
         self.bins = []
@@ -109,8 +116,7 @@ class TimeIndependentHistogram(Histogram):
         """
         Add new value to histogram, i.e., the internal array.
         """
-        # TODO Task 2.4.1: Your code goes here
-        pass
+        self.values.append(value)
 
     def report(self):
         """
@@ -131,7 +137,10 @@ class TimeIndependentHistogram(Histogram):
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
-                pass
+                min_val = np.array(self.values).min()
+                max_val = np.array(self.values).max()
+                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val), density=True)
+                self.plot(show_plot=True)
 
             elif self.type == "bp":
 
@@ -140,7 +149,8 @@ class TimeIndependentHistogram(Histogram):
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
-                pass
+                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(0, 1, 0.1), density=True)
+                self.plot(show_plot=True)
 
             elif self.type == "w":
 
@@ -149,7 +159,10 @@ class TimeIndependentHistogram(Histogram):
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
-                pass
+                min_val = np.array(self.values).min()
+                max_val = np.array(self.values).max()
+                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val), density=True)
+                self.plot(show_plot=True)
 
             else:
                 raise TypeError("Undefined histogram types: %s" % self.type)
@@ -179,11 +192,15 @@ class TimeDependentHistogram(Histogram):
         Add new value to histogram, i.e., the internal array.
         Consider the duration of this value as well.
         """
-        # TODO Task 2.4.2: Your code goes here
-        pass
+        now = self.sim.sim_state.now
+        self.values.append(value)
+        self.weights.append((now - self.last_timestamp))
+        self.last_timestamp = now
 
     def reset(self):
-        # TODO Task 2.4.2: Your code goes here
+        self.first_timestamp = self.sim.sim_state.now
+        self.last_timestamp = self.sim.sim_state.now
+        self.weights = []
         Histogram.reset(self)
 
     def report(self):
