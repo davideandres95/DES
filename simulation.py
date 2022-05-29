@@ -42,8 +42,7 @@ class Simulation(object):
         self.system_state = SystemState(self)
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
-        # TODO Task 2.4.3: Uncomment the line below
-        # self.counter_collection = CounterCollection()
+        self.counter_collection = CounterCollection(self)
         # TODO Task 3.1.2: Uncomment the line below and replace the "None"
         """
         if no_seed:
