@@ -10,6 +10,7 @@ class SimParam(object):
         # current buffer spaces and minimal buffer spaces
         self.S_MIN = 4
         self.S = self.S_MIN  # waiting queue length
+        self.S_VALUES = [5, 6, 7]
 
         # inter-arrival-time and simulation time in ms
         self.IAT = 490

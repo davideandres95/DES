@@ -1,6 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from counter import TimeIndependentCrosscorrelationCounter, TimeIndependentAutocorrelationCounter
 from counter import TimeIndependentCounter, TimeDependentCounter
 from histogram import TimeIndependentHistogram, TimeDependentHistogram
+
+if TYPE_CHECKING:
+    from simulation import Simulation
 
 
 class CounterCollection(object):
@@ -17,7 +23,7 @@ class CounterCollection(object):
         Initialize the counter collection.
         :param sim: the simulation, the CounterCollection belongs to.
         """
-        self.sim = sim
+        self.sim = sim  # type: Simulation
 
         # waiting time
         self.cnt_wt = TimeIndependentCounter()
@@ -107,5 +113,4 @@ class CounterCollection(object):
         """
         self.cnt_ql.count(self.sim.system_state.get_queue_length())
         self.hist_ql.count(self.sim.system_state.get_queue_length())
-
-    # TODO Task 2.5.1: Your code goes here
+        self.cnt_sys_util.count(self.sim.system_state.served_packet.get_service_time())

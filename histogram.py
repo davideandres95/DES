@@ -57,7 +57,7 @@ class Histogram(object):
         """
         raise NotImplementedError
 
-    def plot(self, diag_type="histogram", show_plot=False):
+    def plot(self, diag_type="histogram", show_plot=False, pos='center'):
         """
         Plot function for histogram.
         :param diag_type: string can be "histogram" for a standard bar plot (default), "side-by-side" for a
@@ -77,7 +77,19 @@ class Histogram(object):
             """
             Plot side-by-side histogram plot - mainly thought for mean queue length
             """
-            # TODO Task 2.4.4: Your code goes here somewhere
+            if pos == 'center':
+                pyplot.bar(np.array(self.bin_mids), self.histogram, width / 4, alpha=0.5,
+                           label='S=' + str(self.sim.sim_param.S))
+                pyplot.xticks(self.bins)
+            elif pos == 'left':
+                pyplot.bar(np.array(self.bin_mids) - 0.35, self.histogram, width / 4, alpha=0.5,
+                           label='S=' + str(self.sim.sim_param.S))
+                pyplot.xticks(self.bins)
+            elif pos == 'right':
+                pyplot.bar(np.array(self.bin_mids) + 0.35, self.histogram, width / 4, alpha=0.5,
+                           label='S=' + str(self.sim.sim_param.S))
+                pyplot.xticks(self.bins)
+
 
         elif diag_type == "histogram":
             """
@@ -137,32 +149,31 @@ class TimeIndependentHistogram(Histogram):
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
-                min_val = np.array(self.values).min()
-                max_val = np.array(self.values).max()
-                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val), density=True)
-                self.plot(show_plot=True)
+                min_val = np.floor(np.array(self.values).min())
+                max_val = np.ceil(np.array(self.values).max())
+
+                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val + 1, 1))
 
             elif self.type == "bp":
 
-                # TODO Task 2.4.1: Your code goes here
                 """
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
-                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(0, 1, 0.1), density=True)
-                self.plot(show_plot=True)
+                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(0, 1, 0.1))
 
             elif self.type == "w":
-
-                # TODO Task 2.4.1: Your code goes here
                 """
                 Use numpy.histogram to calculate self.histogram and self.bins.
                 Afterwards call the plot function using self.plot() with adequate parameters
                 """
+                bin_num = np.ceil(np.sqrt(len(self.values)))
                 min_val = np.array(self.values).min()
                 max_val = np.array(self.values).max()
-                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val), density=True)
-                self.plot(show_plot=True)
+                step = (max_val - min_val) / bin_num
+
+                self.histogram, self.bins = numpy.histogram(self.values,
+                                                            bins=np.arange(np.floor(min_val), np.ceil(max_val), step))
 
             else:
                 raise TypeError("Undefined histogram types: %s" % self.type)
