@@ -4,6 +4,8 @@ from event import EventChain, CustomerArrival, SimulationTermination
 from simresult import SimResult
 from simparam import SimParam
 from countercollection import CounterCollection
+
+
 # from rng import RNG, ExponentialRNS, UniformRNS
 
 
@@ -17,14 +19,11 @@ class Simulation(object):
         a specific seed.
         """
         self.sim_param = sim_param
-        self.sim_state = SimState()  # type: SimState
-        self.system_state = SystemState(self)  # type: SystemState
-        self.event_chain = EventChain()  # type: EventChain
-        self.sim_result = SimResult(self)  # type: SimResult
-
+        self.sim_state = SimState()
+        self.system_state = SystemState(self)
+        self.event_chain = EventChain()
+        self.sim_result = SimResult(self)
         self.counter_collection = CounterCollection(self)
-
-        # TODO Task 3.1.2: Uncomment the line below and replace the "None"
         """
         if no_seed:
             self.rng = RNG(None, None)
@@ -32,23 +31,18 @@ class Simulation(object):
             self.rng = RNG(None, None)
         """
 
-    def reset(self, no_seed=False):
+    def reset(self):
         """
         Reset the Simulation object.
-        :param no_seed: is an optional parameter. If it is set to True, the RNG should be reset without a
-        a specific seed.
         """
         self.sim_state = SimState()
         self.system_state = SystemState(self)
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
         self.counter_collection = CounterCollection(self)
-        # TODO Task 3.1.2: Uncomment the line below and replace the "None"
         """
-        if no_seed:
-            self.rng = RNG(None, None)
-        else:
-            self.rng = RNG(None, None)
+        self.rng.iat_rns.set_parameters(None)
+        self.rng.st_rns.set_parameters(None)
         """
 
     def do_simulation(self):
@@ -60,37 +54,25 @@ class Simulation(object):
         # insert first and last event
         self.event_chain.insert(CustomerArrival(self, 0))
         self.event_chain.insert(SimulationTermination(self, self.sim_param.SIM_TIME))
-        event_chain_log = []
 
         # start simulation (run)
         while not self.sim_state.stop:
+
+            # get next simevent from events
             e = self.event_chain.remove_oldest_event()
-            event_chain_log.append(e)
-            e.process()
-            self.sim_state.now = e.timestamp
-            self.counter_collection.count_queue()
+            if e:
+                # if event exists and timestamps are ok, process the event
+                if self.sim_state.now <= e.timestamp:
+                    self.sim_state.now = e.timestamp
+                    self.counter_collection.count_queue()
+                    e.process()
+                else:
+                    print('NOW: ' + str(self.sim_state.now) + ', EVENT TIMESTAMP: ' + str(e.timestamp))
+                    raise RuntimeError("ERROR: TIMESTAMP OF EVENT IS SMALLER THAN CURRENT TIME.")
 
-
-        # gather results for sim_result object
-        self.sim_result.gather_results()
-        return self.sim_result
-
-    def do_simulation_n_limit(self, n):
-        """
-        Call this function, if the simulation should stop after a given number of packets
-        Do one simulation run. Initialize simulation and create first event.
-        After that, one after another event is processed.
-        :param n: number of customers, that are processed before the simulation stops
-        :return: SimResult object
-        """
-        # insert first event
-        self.event_chain.insert(CustomerArrival(self, 0))
-
-        # start simulation (run)
-        while not self.sim_state.stop:
-            # TODO Task 4.3.2: Your code goes here
-            # TODO Task 5.2.2: Your code goes here
-            pass
+            else:
+                print('Event chain is empty. Abort')
+                self.sim_state.stop = True
 
         # gather results for sim_result object
         self.sim_result.gather_results()

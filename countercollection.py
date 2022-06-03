@@ -1,15 +1,10 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from counter import TimeIndependentCrosscorrelationCounter, TimeIndependentAutocorrelationCounter
 from counter import TimeIndependentCounter, TimeDependentCounter
 from histogram import TimeIndependentHistogram, TimeDependentHistogram
 
-if TYPE_CHECKING:
-    from simulation import Simulation
-
 
 class CounterCollection(object):
+
     """
     CounterCollection is a collection of all counters and histograms that are used in the simulations.
 
@@ -23,11 +18,12 @@ class CounterCollection(object):
         Initialize the counter collection.
         :param sim: the simulation, the CounterCollection belongs to.
         """
-        self.sim = sim  # type: Simulation
+        self.sim = sim
 
         # waiting time
         self.cnt_wt = TimeIndependentCounter()
         self.hist_wt = TimeIndependentHistogram(self.sim, "w")
+        self.acnt_wt = TimeIndependentAutocorrelationCounter("waiting time with lags 1 to 20", max_lag=20)
 
         # queue length
         self.cnt_ql = TimeDependentCounter(self.sim)
@@ -35,18 +31,16 @@ class CounterCollection(object):
 
         # system utilization
         self.cnt_sys_util = TimeDependentCounter(self.sim)
-        """
+
         # blocking probability
         self.cnt_bp = TimeIndependentCounter("bp")
         self.hist_bp = TimeIndependentHistogram(self.sim, "bp")
 
-        # correlations
+        # cross correlations
         self.cnt_iat_wt = TimeIndependentCrosscorrelationCounter("inter-arrival time vs. waiting time")
         self.cnt_iat_st = TimeIndependentCrosscorrelationCounter("inter-arrival time vs. service time")
         self.cnt_iat_syst = TimeIndependentCrosscorrelationCounter("inter-arrival time vs. system time")
         self.cnt_st_syst = TimeIndependentCrosscorrelationCounter("service time vs. system time")
-        self.acnt_wt = TimeIndependentAutocorrelationCounter("waiting time with lags 1 to 20", max_lag=20)
-        """
 
     def reset(self):
         """
@@ -54,12 +48,13 @@ class CounterCollection(object):
         """
         self.cnt_wt.reset()
         self.hist_wt.reset()
+        self.acnt_wt.reset()
 
         self.cnt_ql.reset()
         self.hist_ql.reset()
 
         self.cnt_sys_util.reset()
-        """
+
         self.cnt_bp.reset()
         self.hist_bp.reset()
 
@@ -67,8 +62,6 @@ class CounterCollection(object):
         self.cnt_iat_st.reset()
         self.cnt_iat_syst.reset()
         self.cnt_st_syst.reset()
-        self.acnt_wt.reset()
-        """
 
     def report(self):
         """
@@ -77,18 +70,17 @@ class CounterCollection(object):
         """
         self.cnt_wt.report()
         self.hist_wt.report()
+        self.acnt_wt.report()
 
         self.cnt_ql.report()
         self.hist_ql.report()
 
         self.cnt_sys_util.report()
-        """
+
         self.cnt_iat_wt.report()
         self.cnt_iat_st.report()
         self.cnt_iat_syst.report()
         self.cnt_st_syst.report()
-        self.acnt_wt.report()
-        """
 
     def count_packet(self, packet):
         """
@@ -96,13 +88,12 @@ class CounterCollection(object):
         """
         self.cnt_wt.count(packet.get_waiting_time())
         self.hist_wt.count(packet.get_waiting_time())
-        """
+        self.acnt_wt.count(packet.get_waiting_time())
+
         self.cnt_iat_wt.count(packet.get_interarrival_time(), packet.get_waiting_time())
         self.cnt_iat_st.count(packet.get_interarrival_time(), packet.get_service_time())
         self.cnt_iat_syst.count(packet.get_interarrival_time(), packet.get_system_time())
         self.cnt_st_syst.count(packet.get_service_time(), packet.get_system_time())
-        self.acnt_wt.count(packet.get_waiting_time())
-        """
 
     def count_queue(self):
         """
@@ -113,4 +104,8 @@ class CounterCollection(object):
         """
         self.cnt_ql.count(self.sim.system_state.get_queue_length())
         self.hist_ql.count(self.sim.system_state.get_queue_length())
-        self.cnt_sys_util.count(self.sim.system_state.served_packet.get_service_time())
+
+        if self.sim.system_state.server_busy:
+            self.cnt_sys_util.count(1)
+        else:
+            self.cnt_sys_util.count(0)

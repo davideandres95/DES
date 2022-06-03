@@ -1,6 +1,3 @@
-import random
-
-
 class SimParam(object):
     """
     Contains all important simulation parameters
@@ -10,7 +7,9 @@ class SimParam(object):
         # current buffer spaces and minimal buffer spaces
         self.S_MIN = 4
         self.S = self.S_MIN  # waiting queue length
+        # for part 2
         self.S_VALUES = [5, 6, 7]
+        self.S_MAX = 7
 
         # inter-arrival-time and simulation time in ms
         self.IAT = 490
@@ -19,16 +18,14 @@ class SimParam(object):
         # number of runs before first evaluation
         self.NO_OF_RUNS = 1000
 
+        # number of repeats if close to criterion (establish confidence)
+        self.R = 3
+
         # maximal allowed packets to drop in one run (SIM_TIME)
         self.MAX_DROPPED = 10
 
         # set seed for random number generation
-        self.SEED = 3755457
-        self.SEED_IAT = 0
-        self.SEED_ST = 3755457
-
-        # set desired utilization (rho)
-        self.RHO = .5
+        self.SEED = 0
 
     def print_sim_config(self):
         """

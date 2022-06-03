@@ -1,14 +1,9 @@
-from __future__ import annotations
 import queue
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from simulation import Simulation
 
 
 class FiniteQueue(object):
     """
-    Class representing a finite queue representing the system buffer storing packets.
+    Class representing a finite queue representing the system buffer.
 
     It is a FIFO queue with finite capacity. Methods contain adding and removing packets
     as well as checking the fill status of the FIFO. Clearing the queue is done with the method flush.
@@ -17,11 +12,11 @@ class FiniteQueue(object):
     def __init__(self, sim):
         """
         Initialize the finite queue
-        :param sim: simulation object, that the queue belongs to
+        :param sim: simulation object, the queue belongs to
         :return: FiniteQueue object
         """
-        self.sim = sim  # type: Simulation
-        self.buffer = queue.Queue(maxsize=self.sim.sim_param.S)
+        self.sim = sim
+        self.buffer = queue.Queue()
 
     def add(self, packet):
         """
@@ -29,10 +24,10 @@ class FiniteQueue(object):
         :param packet: packet which is supposed to be queued
         :return: true if packet has been enqueued, false if rejected
         """
-        try:
-            self.buffer.put(packet, block=False)
+        if self.buffer.qsize() < self.sim.sim_param.S:
+            self.buffer.put(packet)
             return True
-        except queue.Full:
+        else:
             return False
 
     def remove(self):
@@ -40,11 +35,14 @@ class FiniteQueue(object):
         Return the first packet in line and remove it from the FIFO
         :return: first packet in line
         """
-        return self.buffer.get()
+        if not self.buffer.empty():
+            return self.buffer.get()
+        else:
+            return None
 
     def get_queue_length(self):
         """
-        :return: fill status of the queue (queue length)
+        :return: fill status of the queue
         """
         return self.buffer.qsize()
 
@@ -52,11 +50,10 @@ class FiniteQueue(object):
         """
         :return: true if queue is empty
         """
-        return self.buffer.qsize() == 0
+        return self.buffer.empty()
 
     def flush(self):
         """
-        erase/delete all packets from the FIFO
+        erase all packets from the FIFO
         """
-        while not self.buffer.qsize() == 0:
-            self.buffer.get()
+        self.buffer = queue.Queue()

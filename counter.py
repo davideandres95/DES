@@ -1,12 +1,7 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
 import math
-import numpy as np
+import numpy
 import scipy
 import scipy.stats
-
-if TYPE_CHECKING:
-    from simulation import Simulation
 
 
 class Counter(object):
@@ -68,7 +63,7 @@ class Counter(object):
         if len(self.values) != 0:
             print('Name: ' + str(self.name) + ', Mean: ' + str(self.get_mean()) + ', Variance: ' + str(self.get_var()))
         else:
-            print("List for creating report is empty. Please check.")
+            print('List for creating report is empty. Please check.')
 
 
 class TimeIndependentCounter(Counter):
@@ -96,64 +91,26 @@ class TimeIndependentCounter(Counter):
         """
         Return the mean value of the internal array.
         """
-        return np.mean(self.values)
+        if len(self.values) <= 0:
+            raise RuntimeError("No values stored in the counter. Abort.")
+        else:
+            return numpy.mean(self.values)
 
     def get_var(self):
         """
         Return the variance of the internal array.
         Note, that we take the estimated variance, not the exact variance.
         """
-        return np.var(self.values, ddof=1)
+        if len(self.values) <= 0:
+            raise RuntimeError("No values stored in the counter. Abort.")
+        else:
+            return numpy.var(self.values, ddof=1)
 
     def get_stddev(self):
         """
         Return the standard deviation of the internal array.
         """
-        return np.std(self.values, ddof=1)
-
-    def report_confidence_interval(self, alpha=0.05, print_report=True):
-        """
-        Report a confidence interval with given significance level.
-        This is done by using the t-table provided by scipy.
-        :param alpha: is the significance level (default: 5%)
-        :param print_report: enables an output string
-        :return: half width of confidence interval h
-        """
-        # TODO Task 5.1.1: Your code goes here
-        pass
-
-    def is_in_confidence_interval(self, x, alpha=0.05):
-        """
-        Check if sample x is in confidence interval with given significance level.
-        :param x: is the sample
-        :param alpha: is the significance level
-        :return: true, if sample is in confidence interval
-        """
-        # TODO Task 5.1.1: Your code goes here
-        pass
-
-    def report_bootstrap_confidence_interval(self, alpha=0.05, resample_size=5000, print_report=True):
-        """
-        Report bootstrapping confidence interval with given significance level.
-        This is done with the bootstrap method. Hint: use numpy.random.choice for resampling
-        :param alpha: significance level
-        :param resample_size: resampling size
-        :param print_report: enables an output string
-        :return: lower and upper bound of confidence interval
-        """
-        # TODO Task 5.1.2: Your code goes here
-        pass
-
-    def is_in_bootstrap_confidence_interval(self, x, resample_size=5000, alpha=0.05):
-        """
-        Check if sample x is in bootstrap confidence interval with given resample_size and significance level.
-        :param x: is the sample
-        :param resample_size: resample size
-        :param alpha: is the significance level
-        :return: true, if sample is in confidence interval
-        """
-        # TODO Task 5.1.2: Your code goes here
-        pass
+        return numpy.std(self.values, ddof=1)
 
 
 class TimeDependentCounter(Counter):
@@ -170,45 +127,45 @@ class TimeDependentCounter(Counter):
         :param: name is an identifier for better distinction between multiple counters.
         """
         super(TimeDependentCounter, self).__init__(name)
-        self.weights = []
-        self.sim = sim  # type: Simulation
+        self.sim = sim
         self.first_timestamp = 0
         self.last_timestamp = 0
+        self.sum_power_two = []  # second moment used for variance calculation
 
     def count(self, value):
         """
         Adds new value to internal array.
         Duration from last to current value is considered.
         """
-        now = self.sim.sim_state.now
-        self.values.append(value)
-        self.weights.append((now - self.last_timestamp))
-        self.last_timestamp = now
+
+        dt = self.sim.sim_state.now - self.last_timestamp
+        if dt < 0:
+            print('Error in calculating time dependent statistics. Current time is smaller than last timestamp.')
+            raise ValueError
+        # Second moment
+        self.sum_power_two.append(value * value * dt)
+        # First moment
+        self.values.append(value * dt)
+        self.last_timestamp = self.sim.sim_state.now
 
     def get_mean(self):
         """
         Return the mean value of the counter, normalized by the total duration of the simulation.
         """
-        if (len(self.values) == 0):
-            return 0
-        else:
-            return np.sum(np.multiply(self.values, self.weights)) / (self.last_timestamp - self.first_timestamp)
+        return float(sum(self.values)) / float((self.last_timestamp - self.first_timestamp))
 
     def get_var(self):
         """
         Return the variance of the TDC.
         """
-        mean = self.get_mean()
-        n = len(self.values)
-        moment_2 = np.sum(np.multiply(np.square(self.values), self.weights)) \
-                   / (self.last_timestamp - self.first_timestamp)
-        return moment_2 - np.square(mean)
+        dt = self.last_timestamp - self.first_timestamp
+        return float(sum(self.sum_power_two)) / float(dt) - self.get_mean() * self.get_mean()
 
     def get_stddev(self):
         """
         Return the standard deviation of the TDC.
         """
-        return np.sqrt(self.get_var())
+        return numpy.sqrt(self.get_var())
 
     def reset(self):
         """
@@ -216,6 +173,7 @@ class TimeDependentCounter(Counter):
         """
         self.first_timestamp = self.sim.sim_state.now
         self.last_timestamp = self.sim.sim_state.now
+        self.sum_power_two = []
         Counter.reset(self)
 
 

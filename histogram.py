@@ -1,15 +1,9 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 import numpy
-import numpy as np
 from matplotlib import pyplot
-
-if TYPE_CHECKING:
-    from simulation import Simulation
 
 
 class Histogram(object):
+
     """
     Histogram can take values for statistics and plot a histogram from them.
 
@@ -27,7 +21,7 @@ class Histogram(object):
         :param typestr is mainly for the sake of distinguishing between multiple histograms but information can also
         be used for configuring the plot
         """
-        self.sim = sim  # type: Simulation
+        self.sim = sim
         self.values = []
         self.histogram = None
         self.bins = []
@@ -57,7 +51,7 @@ class Histogram(object):
         """
         raise NotImplementedError
 
-    def plot(self, diag_type="histogram", show_plot=False, pos='center'):
+    def plot(self, diag_type="histogram", show_plot=False):
         """
         Plot function for histogram.
         :param diag_type: string can be "histogram" for a standard bar plot (default), "side-by-side" for a
@@ -77,19 +71,19 @@ class Histogram(object):
             """
             Plot side-by-side histogram plot - mainly thought for mean queue length
             """
-            if pos == 'center':
-                pyplot.bar(np.array(self.bin_mids), self.histogram, width / 4, alpha=0.5,
-                           label='S=' + str(self.sim.sim_param.S))
-                pyplot.xticks(self.bins)
-            elif pos == 'left':
-                pyplot.bar(np.array(self.bin_mids) - 0.35, self.histogram, width / 4, alpha=0.5,
-                           label='S=' + str(self.sim.sim_param.S))
-                pyplot.xticks(self.bins)
-            elif pos == 'right':
-                pyplot.bar(np.array(self.bin_mids) + 0.35, self.histogram, width / 4, alpha=0.5,
-                           label='S=' + str(self.sim.sim_param.S))
-                pyplot.xticks(self.bins)
-
+            num_of_plots = len(self.sim.sim_param.S_VALUES)
+            total_width = .8
+            width = total_width / float(num_of_plots)
+            index = -1
+            for i in range(len(self.sim.sim_param.S_VALUES)):
+                if self.sim.sim_param.S_VALUES[i] == self.sim.sim_param.S:
+                    index = i
+                    break
+            if index == -1:
+                raise SystemError("ERROR GENERATING BAR PLOT")
+            ind = self.bins[0:len(self.bins) - 1] + .1 + index * width
+            pyplot.bar(ind, self.histogram, width=width, label='S=' + str(self.sim.sim_param.S),
+                       color=Histogram.colors[index])
 
         elif diag_type == "histogram":
             """
@@ -109,6 +103,7 @@ class Histogram(object):
 
 
 class TimeIndependentHistogram(Histogram):
+
     """
     Histogram for plotting values independent of their duration.
     """
@@ -135,45 +130,30 @@ class TimeIndependentHistogram(Histogram):
         Make report, i.e., calculate histogram and bins using numpy.
 
         Calculation depends on type (makes results easier to read.
-        "q" stands for queue length histogram resulting in a limited number of bins (only few possible values)
+        "q" stands a queue length histogram resulting in a limited number of bins (only few possible values)
         "bp" stands for blocking probability histogram
         "w" stands for mean waiting time histogram
         After generating the report, the plot function is called (see this function in super class).
         """
         if len(self.values) != 0:
+            weights = numpy.full(len(self.values), 1.0 / float(len(self.values)))
 
             if self.type == "q":
-
-                # TODO Task 2.4.1: Your code goes here
-                """
-                Use numpy.histogram to calculate self.histogram and self.bins.
-                Afterwards call the plot function using self.plot() with adequate parameters
-                """
-                min_val = np.floor(np.array(self.values).min())
-                max_val = np.ceil(np.array(self.values).max())
-
-                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(min_val, max_val + 1, 1))
+                # for queue length histogram each bin represents a integer queue length
+                self.histogram, self.bins = numpy.histogram(self.values, weights=weights,
+                                                            bins=self.sim.sim_param.S_MAX + 1,
+                                                            range=(-.5, self.sim.sim_param.S_MAX + .5))
+                self.plot(diag_type="side-by-side")
 
             elif self.type == "bp":
-
-                """
-                Use numpy.histogram to calculate self.histogram and self.bins.
-                Afterwards call the plot function using self.plot() with adequate parameters
-                """
-                self.histogram, self.bins = numpy.histogram(self.values, bins=np.arange(0, 1, 0.1))
+                # for blocking probability histogram the number of bins should be carefully chosen
+                self.histogram, self.bins = numpy.histogram(self.values, weights=weights, bins=25,
+                                                            range=(0, 1))
+                self.plot(diag_type="histogram")
 
             elif self.type == "w":
-                """
-                Use numpy.histogram to calculate self.histogram and self.bins.
-                Afterwards call the plot function using self.plot() with adequate parameters
-                """
-                bin_num = np.ceil(np.sqrt(len(self.values)))
-                min_val = np.array(self.values).min()
-                max_val = np.array(self.values).max()
-                step = (max_val - min_val) / bin_num
-
-                self.histogram, self.bins = numpy.histogram(self.values,
-                                                            bins=np.arange(np.floor(min_val), np.ceil(max_val), step))
+                self.histogram, self.bins = numpy.histogram(self.values, weights=weights, bins=25, range=(0, 3500))
+                self.plot(diag_type="line")
 
             else:
                 raise TypeError("Undefined histogram types: %s" % self.type)
@@ -203,10 +183,10 @@ class TimeDependentHistogram(Histogram):
         Add new value to histogram, i.e., the internal array.
         Consider the duration of this value as well.
         """
-        now = self.sim.sim_state.now
+        dt = self.sim.sim_state.now - self.last_timestamp
         self.values.append(value)
-        self.weights.append((now - self.last_timestamp))
-        self.last_timestamp = now
+        self.weights.append(dt)
+        self.last_timestamp = self.sim.sim_state.now
 
     def reset(self):
         self.first_timestamp = self.sim.sim_state.now
