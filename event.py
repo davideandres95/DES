@@ -134,11 +134,10 @@ class ServiceCompletion(SimEvent):
         sys_state = self.sim.system_state
         event_chain = self.sim.event_chain
 
+        sys_state.complete_service()
         if sys_state.start_service():  # there are packets in the buffer
             completion_time = self.timestamp + randint(1, 1000)
             event_chain.insert(ServiceCompletion(sim=self.sim, timestamp=completion_time))
-        else:
-            sys_state.complete_service()
 
 
 class SimulationTermination(SimEvent):

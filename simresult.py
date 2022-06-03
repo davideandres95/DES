@@ -26,7 +26,7 @@ class SimResult(object):
         """
         try:
             self.system_utilization = self.sim.counter_collection.cnt_sys_util.get_mean()
-            self.mean_waiting_time = self.sim.counter_collection.acnt_wt.get_mean()
+            self.mean_waiting_time = self.sim.counter_collection.cnt_wt.get_mean()
             self.mean_queue_length = self.sim.counter_collection.cnt_ql.get_mean()
         except:
             # print("counter_collection not available for getting simulation results.")

@@ -1,3 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from finitequeue import FiniteQueue
+from packet import Packet
+
+if TYPE_CHECKING:
+    from simulation import Simulation
+
+
 class SystemState(object):
     """
     This class represents the state of our system.
@@ -22,7 +32,10 @@ class SystemState(object):
         """
         self.buffer_size = sim.sim_param.S
         self.server_busy = False
-        self.buffer_content = 0
+        self.buffer = FiniteQueue(sim)
+        self.served_packet = None  # type: Packet
+        self.last_arrival = 0
+        self.sim = sim  # type: Simulation
 
     def add_packet_to_server(self):
         """
@@ -33,6 +46,8 @@ class SystemState(object):
             return False
         else:
             self.server_busy = True
+            self.served_packet = Packet(self.sim)
+            self.served_packet.start_service()
             return True
 
     def add_packet_to_queue(self):
@@ -40,8 +55,7 @@ class SystemState(object):
         Try to add a packet to the buffer.
         :return: True if buffer/queue is not full and packet has been added successfully.
         """
-        if self.buffer_content < self.buffer_size:
-            self.buffer_content += 1
+        if self.buffer.add(Packet(self.sim)):
             return True
         else:
             return False
@@ -51,16 +65,20 @@ class SystemState(object):
         Reset server status to idle after a service completion.
         """
         self.server_busy = False
-        # TODO Task 2.4.3: Your code goes here somewhere
+        self.sim.counter_collection.count_packet(self.served_packet)
 
     def start_service(self):
         """
         If the buffer is not empty, take the next packet from there and serve it.
         :return: True if buffer is not empty and a stored packet is being served.
         """
-        if (self.buffer_content > 0):  # buffer is not empty
+        if not self.buffer.is_empty():
             self.server_busy = True
-            self.buffer_content -= 1
+            self.served_packet = self.buffer.remove()
+            self.served_packet.start_service()
             return True
         else:
             return False
+
+    def get_queue_length(self):
+        return self.buffer.get_queue_length()

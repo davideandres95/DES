@@ -3,9 +3,7 @@ from systemstate import SystemState
 from event import EventChain, CustomerArrival, SimulationTermination
 from simresult import SimResult
 from simparam import SimParam
-
-
-# from countercollection import CounterCollection
+from countercollection import CounterCollection
 # from rng import RNG, ExponentialRNS, UniformRNS
 
 
@@ -23,8 +21,9 @@ class Simulation(object):
         self.system_state = SystemState(self)  # type: SystemState
         self.event_chain = EventChain()  # type: EventChain
         self.sim_result = SimResult(self)  # type: SimResult
-        # TODO Task 2.4.3: Uncomment the line below
-        # self.counter_collection = CounterCollection()
+
+        self.counter_collection = CounterCollection(self)
+
         # TODO Task 3.1.2: Uncomment the line below and replace the "None"
         """
         if no_seed:
@@ -43,8 +42,7 @@ class Simulation(object):
         self.system_state = SystemState(self)
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
-        # TODO Task 2.4.3: Uncomment the line below
-        # self.counter_collection = CounterCollection()
+        self.counter_collection = CounterCollection(self)
         # TODO Task 3.1.2: Uncomment the line below and replace the "None"
         """
         if no_seed:
@@ -66,21 +64,12 @@ class Simulation(object):
 
         # start simulation (run)
         while not self.sim_state.stop:
-            # TODO Task 1.4.1: Your code goes here
-            """
-            Hint:
-
-            You can use and adapt the following lines in your realization
-            e = self.event_chain.remove_oldest_event()
-            e.process()
-            """
-
             e = self.event_chain.remove_oldest_event()
             event_chain_log.append(e)
             e.process()
             self.sim_state.now = e.timestamp
+            self.counter_collection.count_queue()
 
-            # TODO Task 2.4.3: Your code goes here somewhere
 
         # gather results for sim_result object
         self.sim_result.gather_results()

@@ -1,7 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import math
-import numpy
+import numpy as np
 import scipy
 import scipy.stats
+
+if TYPE_CHECKING:
+    from simulation import Simulation
 
 
 class Counter(object):
@@ -91,23 +96,20 @@ class TimeIndependentCounter(Counter):
         """
         Return the mean value of the internal array.
         """
-        # TODO Task 2.3.1: Your code goes here
-        pass
+        return np.mean(self.values)
 
     def get_var(self):
         """
         Return the variance of the internal array.
         Note, that we take the estimated variance, not the exact variance.
         """
-        # TODO Task 2.3.1: Your code goes here
-        pass
+        return np.var(self.values, ddof=1)
 
     def get_stddev(self):
         """
         Return the standard deviation of the internal array.
         """
-        # TODO Task 2.3.1: Your code goes here
-        pass
+        return np.std(self.values, ddof=1)
 
     def report_confidence_interval(self, alpha=0.05, print_report=True):
         """
@@ -168,7 +170,8 @@ class TimeDependentCounter(Counter):
         :param: name is an identifier for better distinction between multiple counters.
         """
         super(TimeDependentCounter, self).__init__(name)
-        self.sim = sim
+        self.weights = []
+        self.sim = sim  # type: Simulation
         self.first_timestamp = 0
         self.last_timestamp = 0
 
@@ -177,29 +180,35 @@ class TimeDependentCounter(Counter):
         Adds new value to internal array.
         Duration from last to current value is considered.
         """
-        # TODO Task 2.3.2: Your code goes here
-        pass
+        now = self.sim.sim_state.now
+        self.values.append(value)
+        self.weights.append((now - self.last_timestamp))
+        self.last_timestamp = now
 
     def get_mean(self):
         """
         Return the mean value of the counter, normalized by the total duration of the simulation.
         """
-        # TODO Task 2.3.2: Your code goes here
-        pass
+        if (len(self.values) == 0):
+            return 0
+        else:
+            return np.sum(np.multiply(self.values, self.weights)) / (self.last_timestamp - self.first_timestamp)
 
     def get_var(self):
         """
         Return the variance of the TDC.
         """
-        # TODO Task 2.3.2: Your code goes here
-        pass
+        mean = self.get_mean()
+        n = len(self.values)
+        moment_2 = np.sum(np.multiply(np.square(self.values), self.weights)) \
+                   / (self.last_timestamp - self.first_timestamp)
+        return moment_2 - np.square(mean)
 
     def get_stddev(self):
         """
         Return the standard deviation of the TDC.
         """
-        # TODO Task 2.3.2: Your code goes here
-        pass
+        return np.sqrt(self.get_var())
 
     def reset(self):
         """
