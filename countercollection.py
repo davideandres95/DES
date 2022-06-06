@@ -30,7 +30,7 @@ class CounterCollection(object):
         self.hist_ql = TimeDependentHistogram(self.sim, "q")
 
         # system utilization
-        self.cnt_sys_util = TimeDependentCounter(self.sim)
+        self.cnt_sys_util = TimeDependentCounter(self.sim, name=f'sys_util={sim.sim_param.RHO}')
 
         # blocking probability
         self.cnt_bp = TimeIndependentCounter("bp")

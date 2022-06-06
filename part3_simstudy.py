@@ -6,9 +6,9 @@ from datetime import time
 
 import numpy as np
 from matplotlib import pyplot
+from scipy import stats
 
-from counter import TimeDependentCounter, TimeIndependentCounter
-from histogram import TimeIndependentHistogram
+from counter import TimeIndependentCounter
 from rng import RNG, ExponentialRNS, UniformRNS
 from simulation import Simulation
 
@@ -22,6 +22,10 @@ def task_3_2_1():
     This function plots two histograms for verification of the random distributions.
     One histogram is plotted for a uniform distribution, the other one for an exponential distribution.
     """
+    plot_random_distribution_histograms()
+
+
+def plot_random_distribution_histograms(bin_num=None):
     exp_dist = ExponentialRNS(params=arrival, the_seed=seed)
     uni_dist = UniformRNS(params=[2, 5], the_seed=seed)
     exp_values = []
@@ -32,9 +36,10 @@ def task_3_2_1():
         uni_values.append(uni_dist.next())
 
     fig, axs = pyplot.subplots(1, 2)
-    fig.set_figwidth(14)
+    fig.set_figwidth(20)
 
-    bin_num = np.ceil(np.sqrt(len(exp_values)))
+    if bin_num == None:
+        bin_num = np.ceil(np.sqrt(len(exp_values)))
     min_val = np.array(exp_values).min()
     max_val = np.array(exp_values).max()
     step = (max_val - min_val) / bin_num
@@ -47,7 +52,8 @@ def task_3_2_1():
     axs[0].set_ylabel("P(x)")
     axs[0].set_xlabel("x")
 
-    bin_num = np.ceil(np.sqrt(len(uni_values)))
+    if bin_num == None:
+        bin_num = np.ceil(np.sqrt(len(exp_values)))
     min_val = np.array(uni_values).min()
     max_val = np.array(uni_values).max()
     step = (max_val - min_val) / bin_num
@@ -68,35 +74,90 @@ def task_3_2_2():
     """
     sim = Simulation()
     sim.sim_param.S = 5
+    sim.sim_param.SIM_TIME = 100000
 
-    results = {}
+    print("####### SIM_TIME = 100s #######")
 
     for rho in [.01, .5, .8, .9]:
-        results[rho] = []
-        for _ in range(sim.sim_param.NO_OF_RUNS):
-            sim.sim_param.RHO = rho
-            sim.reset()
-            results[rho].append(sim.do_simulation().system_utilization)
+        sim.sim_param.RHO = rho
+        sim.reset()
+        sim.do_simulation()
+        sim.counter_collection.cnt_sys_util.report()
 
-    fig, axs = pyplot.subplots(2, 2)
-    fig.set_figwidth(10)
+    print("####### SIM_TIME = 1000s #######")
 
-    for i, rho in enumerate([.01, .5, .8, .9]):
-        bin_num = np.ceil(np.sqrt(len(results[rho])))
-        min_val = np.array(results[rho]).min()
-        max_val = np.array(results[rho]).max()
-        step = (max_val - min_val) / bin_num
+    sim.sim_param.SIM_TIME = 1000000
+    for rho in [.01, .5, .8, .9]:
+        sim.sim_param.RHO = rho
+        sim.reset()
+        sim.do_simulation()
+        sim.counter_collection.cnt_sys_util.report()
 
-        histogram, bins = np.histogram(results[rho], bins=np.arange(np.floor(min_val), np.ceil(max_val), step))
 
-        weights = np.full(len(results[rho]), 1.0 / float(len(results[rho])))
-        axs[i // 2][i % 2].hist(results[rho], bins, alpha=0.5, rwidth=.7, weights=weights)
-        axs[i // 2][i % 2].set_title(f"ρ={rho}")
-        axs[i // 2][i % 2].set_ylabel("P(x)")
-        axs[i // 2][i % 2].set_xlabel("x")
+def task_3_3_3():
+    sim = Simulation()
+    sim.sim_param.S = 5
+    sim.sim_param.RHO = .01
+    sim.sim_param.SIM_TIME = 100000
 
+    cnt_sys_util = TimeIndependentCounter(name='sys_util')
+
+    for _ in range(sim.sim_param.NO_OF_RUNS):
+        sim.reset()
+        cnt_sys_util.count(sim.do_simulation().system_utilization)
+
+    bin_num = np.ceil(np.sqrt(len(cnt_sys_util.values)))
+    min_val = np.array(cnt_sys_util.values).min()
+    max_val = np.array(cnt_sys_util.values).max()
+    step = (max_val - min_val) / bin_num
+
+    histogram, bins = np.histogram(cnt_sys_util.values, bins=np.arange(np.floor(min_val), np.ceil(max_val), step))
+
+    weights = np.full(len(cnt_sys_util.values), 1.0 / float(len(cnt_sys_util.values)))
+    pyplot.hist(bins[:-1], bins, alpha=0.5, rwidth=.7, weights=histogram, label='Sys. Util.')
+    pyplot.title(f"ρ={sim.sim_param.RHO}")
+    pyplot.ylabel("P(x)")
+    pyplot.xlabel("x")
+    pyplot.legend(loc='upper left')
+    ax2 = pyplot.twinx()
+    plot_gaussian_2(cnt_sys_util.get_mean(), cnt_sys_util.get_stddev())
+    ax2.set_ylim([0, 270])
+    ax2.get_yaxis().set_visible(False)
+    pyplot.xlim([0, 0.025])
+    ax2.legend(loc='upper right')
     pyplot.show()
+
+    cnt_sys_util.report()
+
+
+def plot_gaussian(mean, sigma):
+    np.random.seed(3755457)
+    gaussian_samples = np.random.normal(loc=mean, scale=sigma, size=1000)
+
+    bin_num = np.ceil(np.sqrt(len(gaussian_samples)))
+    min_val = np.array(gaussian_samples).min()
+    max_val = np.array(gaussian_samples).max()
+    step = (max_val - min_val) / bin_num
+    counts, bins = np.histogram(gaussian_samples, bins=np.arange(np.floor(min_val), np.ceil(max_val), step),
+                                density=True)
+    weights = np.full(len(gaussian_samples), 1.0 / float(len(gaussian_samples)))
+    pyplot.hist(gaussian_samples, bins, weights=weights, histtype='step', label='Gaussian', color='orange')
+
+
+def gauss(x, mean, sigma):
+    return (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * np.square((x - mean) / sigma))
+
+
+def plot_gaussian_2(mean, sigma):
+    x_data = np.arange(0, 0.025, 0.00001)
+
+    ## y-axis as the gaussian
+    y_data = gauss(x_data, mean, sigma)
+    ## plot data
+    pyplot.plot(x_data, y_data, label='Gaussian', color='orange')
+
 
 if __name__ == '__main__':
     # task_3_2_1()
-    task_3_2_2()
+    # task_3_2_2()
+    task_3_3_3()
