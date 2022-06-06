@@ -6,7 +6,7 @@ from simparam import SimParam
 from countercollection import CounterCollection
 
 
-# from rng import RNG, ExponentialRNS, UniformRNS
+from rng import RNG, ExponentialRNS, UniformRNS
 
 
 class Simulation(object):
@@ -24,12 +24,13 @@ class Simulation(object):
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
         self.counter_collection = CounterCollection(self)
-        """
+
         if no_seed:
-            self.rng = RNG(None, None)
+            self.rng = RNG(rns1=ExponentialRNS(params=0.001, the_seed=None),
+                           rns2=ExponentialRNS(params=0.001 / self.sim_param.RHO, the_seed=None))
         else:
-            self.rng = RNG(None, None)
-        """
+            self.rng = RNG(rns1=ExponentialRNS(params=0.001, the_seed=self.sim_param.SEED_IAT),
+                           rns2=ExponentialRNS(params=0.001 / self.sim_param.RHO, the_seed=self.sim_param.SEED_ST))
 
     def reset(self):
         """
@@ -40,10 +41,8 @@ class Simulation(object):
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
         self.counter_collection = CounterCollection(self)
-        """
-        self.rng.iat_rns.set_parameters(None)
-        self.rng.st_rns.set_parameters(None)
-        """
+        self.rng.iat_rns.set_parameters(0.001)
+        self.rng.st_rns.set_parameters(0.001 / self.sim_param.RHO)
 
     def do_simulation(self):
         """

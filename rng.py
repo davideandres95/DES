@@ -1,6 +1,8 @@
 import math
 from random import Random
 
+import numpy
+
 
 class RNG(object):
     """
@@ -81,28 +83,25 @@ class ExponentialRNS(RNS):
         Initialize Exponential RNS and set the parameters.
         """
         super(ExponentialRNS, self).__init__(the_seed)
-        # TODO Task 3.1.1: Your code goes here
         """
         Also modify the list of input parameters according to the needs of this distribution.
         """
-        pass
+        self.rate = params
 
     def set_parameters(self, params):
         """
         Set parameters of the distribution.
         """
-        # TODO Task 3.1.1: Your code goes here
         """
         Also modify the list of input parameters according to the needs of this distribution.
         """
-        pass
+        self.rate = params
 
     def next(self):
         """
         Generate the next random number using the inverse transform method.
         """
-        # TODO Task 3.1.1: Your code goes here
-        pass
+        return - numpy.log(self.r.random()) / self.rate
 
 
 class UniformRNS(RNS):
@@ -117,25 +116,24 @@ class UniformRNS(RNS):
         Initialize Uniform RNS and set the parameters.
         """
         super(UniformRNS, self).__init__(the_seed)
-        # TODO Task 3.1.1: Your code goes here
         """
         Also modify the list of input parameters according to the needs of this distribution.
         """
-        pass
+        self.a = params[0]
+        self.b = params[1]
 
     def set_parameters(self, params):
         """
         Set parameters.
         """
-        # TODO Task 3.1.1: Your code goes here
         """
         Also modify the list of input parameters according to the needs of this distribution.
         """
-        pass
+        self.a = params[0]
+        self.b = params[1]
 
     def next(self):
         """
         Generate the next random number using the inverse transform method.
         """
-        # TODO Task 3.1.1: Your code goes here
-        pass
+        return self.a + (self.b - self.a) * self.r.random()

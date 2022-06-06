@@ -25,7 +25,12 @@ class SimParam(object):
         self.MAX_DROPPED = 10
 
         # set seed for random number generation
-        self.SEED = 0
+        self.SEED = 3755457
+        self.SEED_IAT = 0
+        self.SEED_ST = 1
+
+        # set desired utilization (rho)
+        self.RHO = .5
 
     def print_sim_config(self):
         """

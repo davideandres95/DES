@@ -89,13 +89,14 @@ class CustomerArrival(SimEvent):
         If packet is added to the server, a service completion event is generated.
         Each customer is counted either as accepted or as dropped.
         """
-        ev = CustomerArrival(self.sim, self.sim.sim_state.now + self.sim.sim_param.IAT)
+        ev = CustomerArrival(self.sim, self.sim.sim_state.now + self.sim.rng.get_iat())
+
         self.sim.event_chain.insert(ev)
 
         if self.sim.system_state.add_packet_to_server():
             # packet is added to server and served
             ev = ServiceCompletion(
-                self.sim, self.sim.sim_state.now + random.randint(1, 1000))
+                self.sim, self.sim.sim_state.now + self.sim.rng.get_st())
             self.sim.event_chain.insert(ev)
             self.sim.sim_state.packet_accepted()
 
@@ -133,7 +134,7 @@ class ServiceCompletion(SimEvent):
         if self.sim.system_state.start_service():
             # trigger next packet
             ev = ServiceCompletion(
-                self.sim, self.sim.sim_state.now + random.randint(1, 1000))
+                self.sim, self.sim.sim_state.now + self.sim.rng.get_st())
             self.sim.event_chain.insert(ev)
 
 
