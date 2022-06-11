@@ -1,7 +1,8 @@
 import math
-import numpy
+import numpy as np
 import scipy
 import scipy.stats
+from collections import deque
 
 
 class Counter(object):
@@ -94,7 +95,7 @@ class TimeIndependentCounter(Counter):
         if len(self.values) <= 0:
             raise RuntimeError("No values stored in the counter. Abort.")
         else:
-            return numpy.mean(self.values)
+            return np.mean(self.values)
 
     def get_var(self):
         """
@@ -104,13 +105,13 @@ class TimeIndependentCounter(Counter):
         if len(self.values) <= 0:
             raise RuntimeError("No values stored in the counter. Abort.")
         else:
-            return numpy.var(self.values, ddof=1)
+            return np.var(self.values, ddof=1)
 
     def get_stddev(self):
         """
         Return the standard deviation of the internal array.
         """
-        return numpy.std(self.values, ddof=1)
+        return np.std(self.values, ddof=1)
 
 
 class TimeDependentCounter(Counter):
@@ -165,7 +166,7 @@ class TimeDependentCounter(Counter):
         """
         Return the standard deviation of the TDC.
         """
-        return numpy.sqrt(self.get_var())
+        return np.sqrt(self.get_var())
 
     def reset(self):
         """
@@ -188,39 +189,40 @@ class TimeIndependentCrosscorrelationCounter(TimeIndependentCounter):
         :param name: is a string for better distinction between counters.
         """
         super(TimeIndependentCrosscorrelationCounter, self).__init__(name)
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values2 = []
+        self.prod = []
 
     def reset(self):
         """
         Reset the TICCC to its initial state.
         """
         TimeIndependentCounter.reset(self)
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values2 = []
+        self.prod = []
 
     def count(self, x, y):
         """
         Count two values for the correlation between them. They are added to the two internal arrays.
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values.append(x)
+        self.values2.append(y)
+        self.prod.append(x * y)
 
     def get_cov(self):
         """
         Calculate the covariance between the two internal arrays x and y.
         :return: cross covariance
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        return np.mean(self.prod) - np.mean(self.values) * np.mean(self.values2)
 
     def get_cor(self):
         """
         Calculate the correlation between the two internal arrays x and y.
         :return: cross correlation
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        var_x = np.var(self.values, ddof=1)
+        var_y = np.var(self.values2, ddof=1)
+        return self.get_cov() / np.sqrt(var_x * var_y)
 
     def report(self):
         """
@@ -241,46 +243,50 @@ class TimeIndependentAutocorrelationCounter(TimeIndependentCounter):
         :param max_lag: maximum available lag (defaults to 10)
         """
         super(TimeIndependentAutocorrelationCounter, self).__init__(name)
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = max_lag
 
     def reset(self):
         """
         Reset the counter to its original state.
         """
         TimeIndependentCounter.reset(self)
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = 10
 
     def count(self, x):
         """
         Add new element x to counter.
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.values.append(x)
 
     def get_auto_cov(self, lag):
         """
         Calculate the auto covariance for a given lag.
         :return: auto covariance
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        shift = deque(self.values)
+        shift.rotate(lag)
+        prod = [x * y for x, y in zip(self.values, list(shift))]
+        return np.mean(prod) - np.mean(self.values) * np.mean(list(shift))
 
     def get_auto_cor(self, lag):
         """
         Calculate the auto correlation for a given lag.
         :return: auto correlation
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        shift = deque(self.values)
+        shift.rotate(lag)
+        var_x = np.var(self.values, ddof=1)
+        var_y = np.var(list(shift), ddof=1)
+        if (var_x != 0.0 and var_y != 0.0):
+            return self.get_auto_cov(lag) / np.sqrt(var_x * var_y)
+        else:
+            print(f'Warning, the variance is var_x = {var_x}, var_y = {var_y}')
 
     def set_max_lag(self, max_lag):
         """
         Change maximum lag. Cycle length is set to max_lag + 1.
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = max_lag
 
     def report(self):
         """

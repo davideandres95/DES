@@ -26,11 +26,10 @@ class Simulation(object):
         self.counter_collection = CounterCollection(self)
 
         if no_seed:
-            self.rng = RNG(rns1=ExponentialRNS(params=0.001, the_seed=None),
-                           rns2=ExponentialRNS(params=0.001 / self.sim_param.RHO, the_seed=None))
+            self.rng = RNG(ExponentialRNS(1.), ExponentialRNS(1. / float(self.sim_param.RHO)))
         else:
-            self.rng = RNG(rns1=ExponentialRNS(params=0.001, the_seed=self.sim_param.SEED_IAT),
-                           rns2=ExponentialRNS(params=0.001 / self.sim_param.RHO, the_seed=self.sim_param.SEED_ST))
+            self.rng = RNG(ExponentialRNS(1., self.sim_param.SEED_IAT),
+                           ExponentialRNS(1. / float(self.sim_param.RHO), self.sim_param.SEED_ST))
 
     def reset(self):
         """
@@ -41,8 +40,8 @@ class Simulation(object):
         self.event_chain = EventChain()
         self.sim_result = SimResult(self)
         self.counter_collection = CounterCollection(self)
-        self.rng.iat_rns.set_parameters(0.001)
-        self.rng.st_rns.set_parameters(0.001 / self.sim_param.RHO)
+        self.rng.iat_rns.set_parameters(1.)
+        self.rng.st_rns.set_parameters(1. / float(self.sim_param.RHO))
 
     def do_simulation(self):
         """
@@ -56,6 +55,38 @@ class Simulation(object):
 
         # start simulation (run)
         while not self.sim_state.stop:
+
+            # get next simevent from events
+            e = self.event_chain.remove_oldest_event()
+            if e:
+                # if event exists and timestamps are ok, process the event
+                if self.sim_state.now <= e.timestamp:
+                    self.sim_state.now = e.timestamp
+                    self.counter_collection.count_queue()
+                    e.process()
+                else:
+                    print('NOW: ' + str(self.sim_state.now) + ', EVENT TIMESTAMP: ' + str(e.timestamp))
+                    raise RuntimeError("ERROR: TIMESTAMP OF EVENT IS SMALLER THAN CURRENT TIME.")
+
+            else:
+                print('Event chain is empty. Abort')
+                self.sim_state.stop = True
+
+        # gather results for sim_result object
+        self.sim_result.gather_results()
+        return self.sim_result
+
+    def do_simulation_n_limit(self, n):
+        """
+        The simulation stops after a total packet count of N.
+        :return: SimResult object
+        """
+        # insert first and last event
+        self.event_chain.insert(CustomerArrival(self, 0))
+        self.event_chain.insert(SimulationTermination(self, self.sim_param.SIM_TIME))
+
+        # start simulation (run)
+        while len(self.counter_collection.cnt_wt.values) < n:
 
             # get next simevent from events
             e = self.event_chain.remove_oldest_event()

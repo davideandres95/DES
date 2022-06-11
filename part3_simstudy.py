@@ -26,8 +26,8 @@ def task_3_2_1():
 
 
 def plot_random_distribution_histograms(bin_num=None):
-    exp_dist = ExponentialRNS(params=arrival, the_seed=seed)
-    uni_dist = UniformRNS(params=[2, 5], the_seed=seed)
+    exp_dist = ExponentialRNS(lambda_x=arrival, the_seed=seed)
+    uni_dist = UniformRNS(a=2, b=5, the_seed=seed)
     exp_values = []
     uni_values = []
 
@@ -120,7 +120,7 @@ def task_3_3_3():
     pyplot.xlabel("x")
     pyplot.legend(loc='upper left')
     ax2 = pyplot.twinx()
-    plot_gaussian_2(cnt_sys_util.get_mean(), cnt_sys_util.get_stddev())
+    plot_gaussian(cnt_sys_util.get_mean(), cnt_sys_util.get_stddev())
     ax2.set_ylim([0, 270])
     ax2.get_yaxis().set_visible(False)
     pyplot.xlim([0, 0.025])
@@ -130,25 +130,34 @@ def task_3_3_3():
     cnt_sys_util.report()
 
 
-def plot_gaussian(mean, sigma):
-    np.random.seed(3755457)
-    gaussian_samples = np.random.normal(loc=mean, scale=sigma, size=1000)
+def task_3_3_4():
+    sim = Simulation()
+    sim.sim_param.S = 1000000
+    sim.sim_param.SIM_TIME = 1000000
 
-    bin_num = np.ceil(np.sqrt(len(gaussian_samples)))
-    min_val = np.array(gaussian_samples).min()
-    max_val = np.array(gaussian_samples).max()
-    step = (max_val - min_val) / bin_num
-    counts, bins = np.histogram(gaussian_samples, bins=np.arange(np.floor(min_val), np.ceil(max_val), step),
-                                density=True)
-    weights = np.full(len(gaussian_samples), 1.0 / float(len(gaussian_samples)))
-    pyplot.hist(gaussian_samples, bins, weights=weights, histtype='step', label='Gaussian', color='orange')
+    print("####### S = 1000000 SIM_TIME = 1000s #######")
+
+    for rho in [.01, .5, .8, .9]:
+        sim.sim_param.RHO = rho
+        sim.reset()
+        sim.do_simulation()
+        sim.counter_collection.cnt_sys_util.report()
+
+    print("####### S = 1000000 SIM_TIME = 10000s #######")
+
+    sim.sim_param.SIM_TIME = 10000000
+    for rho in [.01, .5, .8, .9]:
+        sim.sim_param.RHO = rho
+        sim.reset()
+        sim.do_simulation()
+        sim.counter_collection.cnt_sys_util.report()
 
 
 def gauss(x, mean, sigma):
     return (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * np.square((x - mean) / sigma))
 
 
-def plot_gaussian_2(mean, sigma):
+def plot_gaussian(mean, sigma):
     x_data = np.arange(0, 0.025, 0.00001)
 
     ## y-axis as the gaussian
@@ -160,4 +169,5 @@ def plot_gaussian_2(mean, sigma):
 if __name__ == '__main__':
     # task_3_2_1()
     # task_3_2_2()
-    task_3_3_3()
+    # task_3_3_3()
+    task_3_3_4()
