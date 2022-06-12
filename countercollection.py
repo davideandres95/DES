@@ -21,12 +21,12 @@ class CounterCollection(object):
         self.sim = sim
 
         # waiting time
-        self.cnt_wt = TimeIndependentCounter()
+        self.cnt_wt = TimeIndependentCounter(name='Waiting Time')
         self.hist_wt = TimeIndependentHistogram(self.sim, "w")
         self.acnt_wt = TimeIndependentAutocorrelationCounter("waiting time with lags 1 to 20", max_lag=20)
 
         # queue length
-        self.cnt_ql = TimeDependentCounter(self.sim)
+        self.cnt_ql = TimeDependentCounter(self.sim, name='Queue Length')
         self.hist_ql = TimeDependentHistogram(self.sim, "q")
 
         # system utilization
@@ -69,11 +69,11 @@ class CounterCollection(object):
         Can be adapted, such that not all reports are printed
         """
         self.cnt_wt.report()
-        self.hist_wt.report()
+        # self.hist_wt.report()
         self.acnt_wt.report()
 
         self.cnt_ql.report()
-        self.hist_ql.report()
+        #self.hist_ql.report()
 
         self.cnt_sys_util.report()
 

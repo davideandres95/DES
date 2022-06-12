@@ -14,8 +14,8 @@ def task_4_2_1():
     """
     cnt_1 = TimeIndependentAutocorrelationCounter(name='sequence_1')
     cnt_2 = TimeIndependentAutocorrelationCounter(name='sequence_2')
-    [cnt_1.count((-1) ** n) for n in range(1000)]
-    for i in range(1, 1001):
+    [cnt_1.count((-1) ** n) for n in range(9000)]
+    for i in range(1, 9001):
         if i % 3 == 0:
             cnt_2.count(-1)
         else:
@@ -90,8 +90,9 @@ def task_4_3_3():
     sim.sim_param.SIM_TIME = 10000000
 
     results = {}
+    colors = ['C0', 'C1', 'C2', 'C3']
 
-    for N in [100, 10000]:
+    for N in [100, 1000, 10000]:
         results[N] = {}
         for rho in [.01, .5, .8, .95]:
             print(f'####### N = {N}, RHO = {rho} #######')
@@ -108,9 +109,9 @@ def task_4_3_3():
                     break
                 results[N][rho].append(cor)
 
-    for rho in results[100]:
+    for rho, color in zip(results[100], colors):
         if results[100][rho]:
-            pyplot.plot(list(range(1, 21)), results[100][rho], label=f'rho = {rho}')
+            pyplot.plot(list(range(1, 21)), results[100][rho], label=f'rho = {rho}', color=color)
     pyplot.title(f'Auto-correlation of Waiting times\nN = {100}')
     pyplot.xticks(list(range(1, 21)), list(range(1, 21)))
     pyplot.ylabel('Auto-correlation')
@@ -118,9 +119,19 @@ def task_4_3_3():
     pyplot.legend()
     pyplot.show()
 
-    for rho in results[10000]:
+    # for rho, color in zip(results[1000], colors):
+    #     if results[1000][rho]:
+    #         pyplot.plot(list(range(1, 21)), results[1000][rho], label=f'rho = {rho}', color=color)
+    # pyplot.title(f'Auto-correlation of Waiting times\nN = {1000}')
+    # pyplot.xticks(list(range(1, 21)), list(range(1, 21)))
+    # pyplot.ylabel('Auto-correlation')
+    # pyplot.xlabel('lag')
+    # pyplot.legend()
+    # pyplot.show()
+
+    for rho, color in zip(results[10000], colors):
         if results[10000][rho]:
-            pyplot.plot(list(range(1, 21)), results[10000][rho], label=f'rho = {rho}')
+            pyplot.plot(list(range(1, 21)), results[10000][rho], label=f'rho = {rho}', color=color)
     pyplot.title(f'Auto-correlation of Waiting times\nN = {10000}')
     pyplot.xticks(list(range(1, 21)), list(range(1, 21)))
     pyplot.ylabel('Auto-correlation')
@@ -130,7 +141,7 @@ def task_4_3_3():
 
 
 if __name__ == '__main__':
-    task_4_2_1()
-    task_4_3_1()
-    task_4_3_2()
+    # task_4_2_1()
+    # task_4_3_1()
+    # task_4_3_2()
     task_4_3_3()
