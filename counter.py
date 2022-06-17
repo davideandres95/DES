@@ -1,7 +1,5 @@
-import math
 import numpy as np
-import scipy
-import scipy.stats
+from scipy.stats import t
 from collections import deque
 
 
@@ -112,6 +110,61 @@ class TimeIndependentCounter(Counter):
         Return the standard deviation of the internal array.
         """
         return np.std(self.values, ddof=1)
+
+    def report_confidence_interval(self, alpha=0.05, print_report=True):
+        """
+        Report a confidence interval with given significance level.
+        This is done by using the t-table provided by scipy.
+        :param alpha: is the significance level (default: 5%)
+        :param print_report: enables an output string
+        :return: half width of confidence interval h
+        """
+        if (alpha >= 0 and alpha <= 1):
+            variance = np.sqrt(self.get_var() / len(self.values))
+            t_alpha_half = t.ppf(float(1 - (alpha / 2)), len(self.values) - 1)
+            interval = variance * t_alpha_half
+            if print_report:
+                print(f'The half width of confidence interval is: {interval}')
+            return interval
+        else:
+            raise ValueError('The level of signigicance must belong to [0,1]')
+
+    def is_in_confidence_interval(self, x, alpha=0.05):
+        """
+        Check if sample x is in confidence interval with given significance level.
+        :param x: is the sample
+        :param alpha: is the significance level
+        :return: true, if sample is in confidence interval
+        """
+        half_width = self.report_confidence_interval(alpha)
+        mean = self.get_mean()
+        if x >= mean - half_width and x <= mean + half_width:
+            return True
+        else:
+            return False
+
+    def report_bootstrap_confidence_interval(self, alpha=0.05, resample_size=5000, print_report=True):
+        """
+        Report bootstrapping confidence interval with given significance level.
+        This is done with the bootstrap method. Hint: use numpy.random.choice for resampling
+        :param alpha: significance level
+        :param resample_size: resampling size
+        :param print_report: enables an output string
+        :return: lower and upper bound of confidence interval
+        """
+        # TODO Task 5.1.2: Your code goes here
+        pass
+
+    def is_in_bootstrap_confidence_interval(self, x, resample_size=5000, alpha=0.05):
+        """
+        Check if sample x is in bootstrap confidence interval with given resample_size and significance level.
+        :param x: is the sample
+        :param resample_size: resample size
+        :param alpha: is the significance level
+        :return: true, if sample is in confidence interval
+        """
+        # TODO Task 5.1.2: Your code goes here
+        pass
 
 
 class TimeDependentCounter(Counter):
