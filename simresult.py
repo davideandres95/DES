@@ -41,3 +41,12 @@ class SimResult(object):
         Gather all available simulation results from SimState and CounterCollection
         """
         self.gather_results()
+
+    def reset(self):
+        self.system_utilization = 0
+        self.packets_dropped = 0
+        self.packets_served = 0
+        self.packets_total = 0
+        self.mean_waiting_time = 0
+        self.mean_queue_length = 0
+        self.blocking_probability = 0

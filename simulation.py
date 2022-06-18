@@ -76,17 +76,21 @@ class Simulation(object):
         self.sim_result.gather_results()
         return self.sim_result
 
-    def do_simulation_n_limit(self, n):
+    def do_simulation_n_limit(self, n, new_batch=False):
         """
-        The simulation stops after a total packet count of N.
+        Call this function, if the simulation should stop after a given number of packets
+        Do one simulation run. Initialize simulation and create first event.
+        After that, one after another event is processed.
+        :param n: number of customers, that are processed before the simulation stops
         :return: SimResult object
         """
-        # insert first and last event
-        self.event_chain.insert(CustomerArrival(self, 0))
-        self.event_chain.insert(SimulationTermination(self, self.sim_param.SIM_TIME))
+        # insert first event only if no new batch has been started
+        if not new_batch:
+            self.event_chain.insert(CustomerArrival(self, 0))
 
+        cnt_served_packets = 0
         # start simulation (run)
-        while len(self.counter_collection.cnt_wt.values) < n:
+        while not self.sim_state.stop:
 
             # get next simevent from events
             e = self.event_chain.remove_oldest_event()
@@ -96,6 +100,13 @@ class Simulation(object):
                     self.sim_state.now = e.timestamp
                     self.counter_collection.count_queue()
                     e.process()
+
+                    # if this event is a service completion event
+                    if e.priority == 0:
+                        cnt_served_packets += 1
+                        if cnt_served_packets > n:
+                            self.sim_state.stop = True
+
                 else:
                     print('NOW: ' + str(self.sim_state.now) + ', EVENT TIMESTAMP: ' + str(e.timestamp))
                     raise RuntimeError("ERROR: TIMESTAMP OF EVENT IS SMALLER THAN CURRENT TIME.")

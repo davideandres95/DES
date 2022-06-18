@@ -152,8 +152,22 @@ class TimeIndependentCounter(Counter):
         :param print_report: enables an output string
         :return: lower and upper bound of confidence interval
         """
-        # TODO Task 5.1.2: Your code goes here
-        pass
+        deltas = []
+        for i in range(resample_size):
+            samples = np.random.choice(self.values, len(self.values), replace=True)
+            deltas.append(np.mean(samples) - self.get_mean())
+        sorted_deltas = sorted(deltas)
+
+        index1 = int((alpha / 2) * resample_size)
+        index2 = int(resample_size * (1 - alpha / 2))
+
+        lower = self.get_mean() - sorted_deltas[index2]
+        upper = self.get_mean() - sorted_deltas[index1]
+
+        if print_report:
+            # print('Upper index: ' + str(index1) + ' Lower index: ' + str(index2))
+            print('The bootstrap confidence interval is: [' + str(lower) + ', ' + str(upper) + ']')
+        return lower, upper
 
     def is_in_bootstrap_confidence_interval(self, x, resample_size=5000, alpha=0.05):
         """
@@ -163,8 +177,11 @@ class TimeIndependentCounter(Counter):
         :param alpha: is the significance level
         :return: true, if sample is in confidence interval
         """
-        # TODO Task 5.1.2: Your code goes here
-        pass
+        lower, upper = self.report_bootstrap_confidence_interval(alpha=alpha, resample_size=resample_size)
+        if x >= lower and x <= upper:
+            return True
+        else:
+            return False
 
 
 class TimeDependentCounter(Counter):

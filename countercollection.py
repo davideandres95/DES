@@ -73,7 +73,7 @@ class CounterCollection(object):
         self.acnt_wt.report()
 
         self.cnt_ql.report()
-        #self.hist_ql.report()
+        self.hist_ql.report()
 
         self.cnt_sys_util.report()
 

@@ -1,6 +1,8 @@
+import counter
 from counter import TimeIndependentCounter
 from simulation import Simulation
 from matplotlib import pyplot
+
 
 """
 This file should be used to keep all necessary code that is used for the simulation section in part 5
@@ -13,10 +15,31 @@ def task_5_2_1():
     Run task 5.2.1. Make multiple runs until the blocking probability distribution reaches
     a confidence level alpha. Simulation is performed for 100s and 1000s and for alpha = 90% and 95%.
     """
+    sim = Simulation()
     results = [None, None, None, None]
-    # TODO Task 5.2.1: Your code goes here
 
-    # print and return results
+    sim.sim_param.S = 4
+
+    sim.sim_param.RHO = 0.9
+
+    bp_tic = counter.TimeIndependentCounter(name='block prob.')
+
+    for idx1, sim_time in enumerate([100000, 1000000]):
+        sim.sim_param.SIM_TIME = sim_time
+        for idx2, alpha in enumerate([0.10, 0.05]):
+            bp_tic.reset()
+            runs = 0
+            reached_confidence = False
+            while not reached_confidence:
+                runs += 1
+                sim.reset()
+                sim.do_simulation()
+                bp_tic.count(sim.sim_result.blocking_probability)
+                width = bp_tic.report_confidence_interval(alpha=alpha, print_report=False)
+                if width <= (2 * sim.sim_param.epsilon):
+                    reached_confidence = True
+            results[(idx1 * 2) + idx2] = runs
+
     print(
         'SIM TIME:  100s; ALPHA: 10%; NUMBER OF RUNS: ' + str(results[0]) + '; TOTAL SIMULATION TIME (SECONDS): ' + str(
             results[0] * 100))
@@ -39,8 +62,36 @@ def task_5_2_2():
     Do this until the desired confidence level is reached and print out the simulation time as well as the number of
     batches.
     """
+    sim = Simulation()
     results = [None, None, None, None]
-    # TODO Task 5.2.2: Your code goes here
+
+    sim.sim_param.S = 4
+    sim.sim_param.RHO = 0.9
+
+    bp_tic = counter.TimeIndependentCounter(name='block prob.')
+
+    for idx1, size in enumerate([100, 1000]):
+        for idx2, alpha in enumerate([0.10, 0.05]):
+            bp_tic.reset()
+            sim.reset()
+            batches = 0
+            reached_confidence = False
+            while not reached_confidence:
+                sim.sim_result.reset()
+                sim.counter_collection.reset()
+                sim.sim_state.num_blocked_packets = 0
+                sim.sim_state.num_packets = 0
+                sim.sim_state.stop = False
+                if batches == 0:
+                    sim.do_simulation_n_limit(n=size, new_batch=False)
+                else:
+                    sim.do_simulation_n_limit(n=size, new_batch=True)
+                bp_tic.count(sim.sim_result.blocking_probability)
+                width = bp_tic.report_confidence_interval(alpha=alpha, print_report=False)
+                if width <= (2 * sim.sim_param.epsilon):
+                    reached_confidence = True
+                batches += 1
+            results[(int(idx1) * 2) + int(idx2)] = batches
 
     # print and return results
     print('BATCH SIZE:  100; ALPHA: 10%; TOTAL SIMULATION TIME (SECONDS): ' + str(results[0] / 1000))
@@ -79,6 +130,6 @@ def plot_confidence(sim, x, y_min, y_max, calc_mean, act_mean, ylabel):
 
 
 if __name__ == '__main__':
-    task_5_2_1()
+    # task_5_2_1()
     task_5_2_2()
-    task_5_2_4()
+    # task_5_2_4()
