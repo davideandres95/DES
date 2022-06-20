@@ -20,7 +20,8 @@ class SimParam(object):
 
         # number of repeats if close to criterion (establish confidence)
         self.R = 3
-        self.epsilon = 0.0015
+        self.EPSILON = 0.0015
+        self.ALPHA = 0.10
 
         # maximal allowed packets to drop in one run (SIM_TIME)
         self.MAX_DROPPED = 10

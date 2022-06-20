@@ -1,7 +1,6 @@
 import unittest
 from counter import TimeIndependentCounter
 
-
 class DESTest(unittest.TestCase):
     """
     This python unittest class checks the fifth part of the programming assignment for basic functionality.

@@ -160,6 +160,7 @@ class TimeIndependentCounter(Counter):
 
         index1 = int((alpha / 2) * resample_size)
         index2 = int(resample_size * (1 - alpha / 2))
+        print('Upper index: ' + str(index1) + ' Lower index: ' + str(index2))
 
         lower = self.get_mean() - sorted_deltas[index2]
         upper = self.get_mean() - sorted_deltas[index1]

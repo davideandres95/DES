@@ -2,6 +2,7 @@ import counter
 from counter import TimeIndependentCounter
 from simulation import Simulation
 from matplotlib import pyplot
+import numpy as np
 
 
 """
@@ -36,7 +37,7 @@ def task_5_2_1():
                 sim.do_simulation()
                 bp_tic.count(sim.sim_result.blocking_probability)
                 width = bp_tic.report_confidence_interval(alpha=alpha, print_report=False)
-                if width <= (2 * sim.sim_param.epsilon):
+                if width <= (2 * sim.sim_param.EPSILON):
                     reached_confidence = True
             results[(idx1 * 2) + idx2] = runs
 
@@ -88,7 +89,7 @@ def task_5_2_2():
                     sim.do_simulation_n_limit(n=size, new_batch=True)
                 bp_tic.count(sim.sim_result.blocking_probability)
                 width = bp_tic.report_confidence_interval(alpha=alpha, print_report=False)
-                if width <= (2 * sim.sim_param.epsilon):
+                if width <= (2 * sim.sim_param.EPSILON):
                     reached_confidence = True
                 batches += 1
             results[(int(idx1) * 2) + int(idx2)] = batches
@@ -107,8 +108,45 @@ def task_5_2_4():
     We use the function plot_confidence() for the actual plotting and run our simulation several times to get the
     samples. Due to the different configurations, we receive eight plots in two figures.
     """
-    # TODO Task 5.2.4: Your code goes here
-    pass
+    sim = Simulation()
+
+    sim.sim_param.S = 10000
+
+    # tp_tic = counter.TimeIndependentCounter(name='Throughput')
+    util_tic = counter.TimeIndependentCounter(name='Utilization')
+
+    for idx1, rho in enumerate([0.5, 0.9]):
+        sim.sim_param.RHO = rho
+        for idx2, sim_time in enumerate([100000, 1000000]):
+            sim.sim_param.SIM_TIME = sim_time
+            for idx3, alpha in enumerate([0.10, 0.05]):
+                results = []
+                means = []
+                for sim_id in range(1, 101):
+                    # tp_tic.reset()
+                    util_tic.reset()
+                    for run in range(1, 31):
+                        sim.reset()
+                        sim.do_simulation()
+                        # throughput = sim.sim_result.packets_served / sim.sim_param.SIM_TIME * 1000
+                        utilization = sim.sim_result.system_utilization
+                        # tp_tic.count(throughput)
+                        util_tic.count(utilization)
+                    # width = tp_tic.report_confidence_interval(alpha=alpha, print_report=False)
+                    width = util_tic.report_confidence_interval(alpha=alpha, print_report=False)
+                    results.append(width)
+                    # means.append(tp_tic.get_mean())
+                    means.append(util_tic.get_mean())
+
+                # low = (np.ones(len(results)) * tp_tic.get_mean()) - np.array(results)
+                # high = (np.ones(len(results)) * tp_tic.get_mean()) + np.array(results)
+                low = (np.ones(len(results)) * util_tic.get_mean()) - np.array(results)
+                high = (np.ones(len(results)) * util_tic.get_mean()) + np.array(results)
+                # act_mean = 1
+                act_mean = rho
+                print(f'rho: {rho}, time: {sim_time}, alpha: {alpha}, results: low-{low} high-{high}')
+                # plot_confidence(sim, np.arange(0, 100), low, high, means, act_mean, "System throughput [p/s]")
+                plot_confidence(sim, np.arange(0, 100), low, high, means, act_mean, "System Utilization")
 
 
 def plot_confidence(sim, x, y_min, y_max, calc_mean, act_mean, ylabel):
@@ -123,13 +161,18 @@ def plot_confidence(sim, x, y_min, y_max, calc_mean, act_mean, ylabel):
     :param ylabel: is the y-label of the plot
     :return:
     """
-    # TODO Task 5.2.3: Your code goes here
-    """
-    Note: You can change the input parameters, if you prefer to.
-    """
+    for id in x:
+        pyplot.vlines(id, y_min[id], y_max[id], linestyles="dotted", colors="k")
+
+    pyplot.title(f'rho: {sim.sim_param.RHO}, time: {sim.sim_param.SIM_TIME}, alpha: {sim.sim_param.ALPHA}')
+    pyplot.plot(x, np.ones(100) * act_mean, linestyle='dashed', color='C3')
+    # pyplot.scatter(x, calc_mean, marker='x')
+    pyplot.ylabel(ylabel)
+    pyplot.xlabel('sample id')
+    pyplot.show()
 
 
 if __name__ == '__main__':
     # task_5_2_1()
-    task_5_2_2()
-    # task_5_2_4()
+    # task_5_2_2()
+    task_5_2_4()
