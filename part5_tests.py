@@ -2,6 +2,7 @@ import unittest
 from counter import TimeIndependentCounter
 
 class DESTest(unittest.TestCase):
+
     """
     This python unittest class checks the fifth part of the programming assignment for basic functionality.
     """
@@ -48,9 +49,9 @@ class DESTest(unittest.TestCase):
                          msg="Error in Confidence interval calculation. Value should be in interval, but isn't.")
 
         lower, upper = tic.report_bootstrap_confidence_interval(alpha=.05, resample_size=10000)
-        self.assertAlmostEqual(lower, 1.55556, delta=0.01,
+        self.assertAlmostEqual(lower, 1.33333, delta=0.01,
                                msg="Error in bootstrap confidence interval calculation. Wrong lower boundary.")
-        self.assertAlmostEqual(upper, 4.66667, delta=0.01,
+        self.assertAlmostEqual(upper, 4.44444, delta=0.01,
                                msg="Error in bootstrap confidence interval calculation. Wrong upper boundary.")
 
         self.assertEqual(tic.is_in_bootstrap_confidence_interval(4, resample_size=5000, alpha=.05), True,

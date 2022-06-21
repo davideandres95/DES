@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import t
+from scipy.stats import t, skew
 from collections import deque
 
 
@@ -111,6 +111,12 @@ class TimeIndependentCounter(Counter):
         """
         return np.std(self.values, ddof=1)
 
+    def get_skewness(self):
+        """
+        :return: the sample skewness of a data set.
+        """
+        return skew(self.values)
+
     def report_confidence_interval(self, alpha=0.05, print_report=True):
         """
         Report a confidence interval with given significance level.
@@ -158,12 +164,8 @@ class TimeIndependentCounter(Counter):
             deltas.append(np.mean(samples) - self.get_mean())
         sorted_deltas = sorted(deltas)
 
-        index1 = int((alpha / 2) * resample_size)
-        index2 = int(resample_size * (1 - alpha / 2))
-        print('Upper index: ' + str(index1) + ' Lower index: ' + str(index2))
-
-        lower = self.get_mean() - sorted_deltas[index2]
-        upper = self.get_mean() - sorted_deltas[index1]
+        lower = self.get_mean() - np.quantile(sorted_deltas, 1 - (alpha / 2))
+        upper = self.get_mean() - np.quantile(sorted_deltas, alpha / 2)
 
         if print_report:
             # print('Upper index: ' + str(index1) + ' Lower index: ' + str(index2))
