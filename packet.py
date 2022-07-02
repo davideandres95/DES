@@ -1,4 +1,5 @@
 class Packet(object):
+
     """
     Packet represents a data packet processed by the DES.
 
@@ -28,25 +29,25 @@ class Packet(object):
         """
         Change the status of the packet once the serving process starts.
         """
-        self.t_start = self.sim.sim_state.now
         self.waiting = False
         self.served = True
+        self.t_start = self.sim.sim_state.now
 
     def complete_service(self):
         """
         Change the status of the packet once the serving process is completed.
         """
-        self.t_complete = self.sim.sim_state.now
         self.served = False
         self.completed = True
+        self.t_complete = self.sim.sim_state.now
 
     def get_waiting_time(self):
         """
         Return the waiting time of the packet. An error occurs when the packet has not been served yet.
         :return: waiting time
         """
-        if self.waiting == True:
-            raise ValueError('The packet has not been served yet. Still waiting.')
+        if self.waiting:
+            raise SystemError("Packet has not been served yet.")
         else:
             return self.t_start - self.t_arrival
 
@@ -55,14 +56,20 @@ class Packet(object):
         Calculate and return the service time
         :return: service time
         """
-        return self.t_complete - self.t_start
+        if not self.completed:
+            raise SystemError("Packet is not completed yet.")
+        else:
+            return self.t_complete - self.t_start
 
     def get_system_time(self):
         """
         Calculate and return the system time (waiting time + service time)
         :return: system time (waiting time + serving time)
         """
-        return self.t_complete - self.t_arrival
+        if not self.completed:
+            raise SystemError("Packet is not completed yet.")
+        else:
+            return self.t_complete - self.t_arrival
 
     def get_interarrival_time(self):
         """

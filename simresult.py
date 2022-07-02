@@ -26,10 +26,10 @@ class SimResult(object):
         """
         try:
             self.system_utilization = self.sim.counter_collection.cnt_sys_util.get_mean()
-            self.mean_waiting_time = self.sim.counter_collection.cnt_wt.get_mean()
+            self.mean_waiting_time = self.sim.counter_collection.acnt_wt.get_mean()
             self.mean_queue_length = self.sim.counter_collection.cnt_ql.get_mean()
         except:
-            # print("counter_collection not available for getting simulation results.")
+            # print('counter_collection not available for getting simulation results.')
             pass
         self.packets_dropped = self.sim.sim_state.num_blocked_packets
         self.packets_served = self.sim.sim_state.num_packets - self.sim.sim_state.num_blocked_packets
@@ -41,3 +41,12 @@ class SimResult(object):
         Gather all available simulation results from SimState and CounterCollection
         """
         self.gather_results()
+
+    def reset(self):
+        self.system_utilization = 0
+        self.packets_dropped = 0
+        self.packets_served = 0
+        self.packets_total = 0
+        self.mean_waiting_time = 0
+        self.mean_queue_length = 0
+        self.blocking_probability = 0

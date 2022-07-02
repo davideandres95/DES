@@ -1,6 +1,8 @@
 import math
 from random import Random
 
+import numpy
+
 
 class RNG(object):
     """
@@ -72,70 +74,60 @@ class RNS(object):
 class ExponentialRNS(RNS):
     """
     Class to provide exponentially distributed random numbers. After initialization, new numbers can be generated
-    using next(). Initialization with given parameters and optional seed.
+    using next(). Initialization with given lambda and optional seed.
+    :param lambda_x: the inverse of the mean of the exponential distribution
     :param the_seed: optional seed for the random number stream
     """
 
-    def __init__(self, params, the_seed=None):
+    def __init__(self, lambda_x, the_seed=None):
         """
         Initialize Exponential RNS and set the parameters.
         """
         super(ExponentialRNS, self).__init__(the_seed)
-        # TODO Task 3.1.1: Your code goes here
-        """
-        Also modify the list of input parameters according to the needs of this distribution.
-        """
-        pass
+        self.mean = 0
+        self.set_parameters(lambda_x)
 
-    def set_parameters(self, params):
+    def set_parameters(self, lambda_x):
         """
-        Set parameters of the distribution.
+        Set parameter lambda, hence the mean of the exponential distribution.
         """
-        # TODO Task 3.1.1: Your code goes here
-        """
-        Also modify the list of input parameters according to the needs of this distribution.
-        """
-        pass
+        self.mean = 1. / float(lambda_x)
 
     def next(self):
         """
         Generate the next random number using the inverse transform method.
         """
-        # TODO Task 3.1.1: Your code goes here
-        pass
+        return -math.log(self.r.random()) * self.mean
 
 
 class UniformRNS(RNS):
     """
     Class to provide exponentially distributed random numbers. After initialization, new numbers can be generated
-    using next(). Initialization with given parameters and optional seed.
+    using next(). Initialization with upper and lower bound and optional seed.
+    :param a: the lower bound of the uniform distribution
+    :param b: the upper bound of the uniform distribution
     :param the_seed: optional seed for the random number stream
     """
 
-    def __init__(self, params, the_seed=None):
+    def __init__(self, a, b, the_seed=None):
         """
         Initialize Uniform RNS and set the parameters.
         """
         super(UniformRNS, self).__init__(the_seed)
-        # TODO Task 3.1.1: Your code goes here
-        """
-        Also modify the list of input parameters according to the needs of this distribution.
-        """
-        pass
+        self.upper_bound = a
+        self.lower_bound = b
+        self.width = self.upper_bound - self.lower_bound
 
-    def set_parameters(self, params):
+    def set_parameters(self, a, b):
         """
-        Set parameters.
+        Set parameters a and b, the upper and lower bound of the distribution
         """
-        # TODO Task 3.1.1: Your code goes here
-        """
-        Also modify the list of input parameters according to the needs of this distribution.
-        """
-        pass
+        self.upper_bound = a
+        self.lower_bound = b
+        self.width = self.upper_bound - self.lower_bound
 
     def next(self):
         """
         Generate the next random number using the inverse transform method.
         """
-        # TODO Task 3.1.1: Your code goes here
-        pass
+        return self.lower_bound + self.width * self.r.random()

@@ -1,12 +1,6 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-import math
 import numpy as np
-import scipy
-import scipy.stats
-
-if TYPE_CHECKING:
-    from simulation import Simulation
+from scipy.stats import t, skew
+from collections import deque
 
 
 class Counter(object):
@@ -68,7 +62,7 @@ class Counter(object):
         if len(self.values) != 0:
             print('Name: ' + str(self.name) + ', Mean: ' + str(self.get_mean()) + ', Variance: ' + str(self.get_var()))
         else:
-            print("List for creating report is empty. Please check.")
+            print('List for creating report is empty. Please check.')
 
 
 class TimeIndependentCounter(Counter):
@@ -96,20 +90,32 @@ class TimeIndependentCounter(Counter):
         """
         Return the mean value of the internal array.
         """
-        return np.mean(self.values)
+        if len(self.values) <= 0:
+            raise RuntimeError("No values stored in the counter. Abort.")
+        else:
+            return np.mean(self.values)
 
     def get_var(self):
         """
         Return the variance of the internal array.
         Note, that we take the estimated variance, not the exact variance.
         """
-        return np.var(self.values, ddof=1)
+        if len(self.values) <= 0:
+            raise RuntimeError("No values stored in the counter. Abort.")
+        else:
+            return np.var(self.values, ddof=1)
 
     def get_stddev(self):
         """
         Return the standard deviation of the internal array.
         """
         return np.std(self.values, ddof=1)
+
+    def get_skewness(self):
+        """
+        :return: the sample skewness of a data set.
+        """
+        return skew(self.values)
 
     def report_confidence_interval(self, alpha=0.05, print_report=True):
         """
@@ -119,8 +125,15 @@ class TimeIndependentCounter(Counter):
         :param print_report: enables an output string
         :return: half width of confidence interval h
         """
-        # TODO Task 5.1.1: Your code goes here
-        pass
+        if (alpha >= 0 and alpha <= 1):
+            variance = np.sqrt(self.get_var() / len(self.values))
+            t_alpha_half = t.ppf(float(1 - (alpha / 2)), len(self.values) - 1)
+            interval = variance * t_alpha_half
+            if print_report:
+                print(f'The half width of confidence interval is: {interval}')
+            return interval
+        else:
+            raise ValueError('The level of signigicance must belong to [0,1]')
 
     def is_in_confidence_interval(self, x, alpha=0.05):
         """
@@ -129,8 +142,12 @@ class TimeIndependentCounter(Counter):
         :param alpha: is the significance level
         :return: true, if sample is in confidence interval
         """
-        # TODO Task 5.1.1: Your code goes here
-        pass
+        half_width = self.report_confidence_interval(alpha)
+        mean = self.get_mean()
+        if x >= mean - half_width and x <= mean + half_width:
+            return True
+        else:
+            return False
 
     def report_bootstrap_confidence_interval(self, alpha=0.05, resample_size=5000, print_report=True):
         """
@@ -141,8 +158,19 @@ class TimeIndependentCounter(Counter):
         :param print_report: enables an output string
         :return: lower and upper bound of confidence interval
         """
-        # TODO Task 5.1.2: Your code goes here
-        pass
+        deltas = []
+        for i in range(resample_size):
+            samples = np.random.choice(self.values, len(self.values), replace=True)
+            deltas.append(np.mean(samples) - self.get_mean())
+        sorted_deltas = sorted(deltas)
+
+        lower = self.get_mean() - np.quantile(sorted_deltas, 1 - (alpha / 2))
+        upper = self.get_mean() - np.quantile(sorted_deltas, alpha / 2)
+
+        if print_report:
+            # print('Upper index: ' + str(index1) + ' Lower index: ' + str(index2))
+            print('The bootstrap confidence interval is: [' + str(lower) + ', ' + str(upper) + ']')
+        return lower, upper
 
     def is_in_bootstrap_confidence_interval(self, x, resample_size=5000, alpha=0.05):
         """
@@ -152,8 +180,11 @@ class TimeIndependentCounter(Counter):
         :param alpha: is the significance level
         :return: true, if sample is in confidence interval
         """
-        # TODO Task 5.1.2: Your code goes here
-        pass
+        lower, upper = self.report_bootstrap_confidence_interval(alpha=alpha, resample_size=resample_size)
+        if x >= lower and x <= upper:
+            return True
+        else:
+            return False
 
 
 class TimeDependentCounter(Counter):
@@ -170,39 +201,39 @@ class TimeDependentCounter(Counter):
         :param: name is an identifier for better distinction between multiple counters.
         """
         super(TimeDependentCounter, self).__init__(name)
-        self.weights = []
-        self.sim = sim  # type: Simulation
+        self.sim = sim
         self.first_timestamp = 0
         self.last_timestamp = 0
+        self.sum_power_two = []  # second moment used for variance calculation
 
     def count(self, value):
         """
         Adds new value to internal array.
         Duration from last to current value is considered.
         """
-        now = self.sim.sim_state.now
-        self.values.append(value)
-        self.weights.append((now - self.last_timestamp))
-        self.last_timestamp = now
+
+        dt = self.sim.sim_state.now - self.last_timestamp
+        if dt < 0:
+            print('Error in calculating time dependent statistics. Current time is smaller than last timestamp.')
+            raise ValueError
+        # Second moment
+        self.sum_power_two.append(value * value * dt)
+        # First moment
+        self.values.append(value * dt)
+        self.last_timestamp = self.sim.sim_state.now
 
     def get_mean(self):
         """
         Return the mean value of the counter, normalized by the total duration of the simulation.
         """
-        if (len(self.values) == 0):
-            return 0
-        else:
-            return np.sum(np.multiply(self.values, self.weights)) / (self.last_timestamp - self.first_timestamp)
+        return float(sum(self.values)) / float((self.last_timestamp - self.first_timestamp))
 
     def get_var(self):
         """
         Return the variance of the TDC.
         """
-        mean = self.get_mean()
-        n = len(self.values)
-        moment_2 = np.sum(np.multiply(np.square(self.values), self.weights)) \
-                   / (self.last_timestamp - self.first_timestamp)
-        return moment_2 - np.square(mean)
+        dt = self.last_timestamp - self.first_timestamp
+        return float(sum(self.sum_power_two)) / float(dt) - self.get_mean() * self.get_mean()
 
     def get_stddev(self):
         """
@@ -216,6 +247,7 @@ class TimeDependentCounter(Counter):
         """
         self.first_timestamp = self.sim.sim_state.now
         self.last_timestamp = self.sim.sim_state.now
+        self.sum_power_two = []
         Counter.reset(self)
 
 
@@ -230,39 +262,40 @@ class TimeIndependentCrosscorrelationCounter(TimeIndependentCounter):
         :param name: is a string for better distinction between counters.
         """
         super(TimeIndependentCrosscorrelationCounter, self).__init__(name)
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values2 = []
+        self.prod = []
 
     def reset(self):
         """
         Reset the TICCC to its initial state.
         """
         TimeIndependentCounter.reset(self)
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values2 = []
+        self.prod = []
 
     def count(self, x, y):
         """
         Count two values for the correlation between them. They are added to the two internal arrays.
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        self.values.append(x)
+        self.values2.append(y)
+        self.prod.append(x * y)
 
     def get_cov(self):
         """
         Calculate the covariance between the two internal arrays x and y.
         :return: cross covariance
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        return np.mean(self.prod) - np.mean(self.values) * np.mean(self.values2)
 
     def get_cor(self):
         """
         Calculate the correlation between the two internal arrays x and y.
         :return: cross correlation
         """
-        # TODO Task 4.1.1: Your code goes here
-        pass
+        var_x = np.var(self.values, ddof=1)
+        var_y = np.var(self.values2, ddof=1)
+        return self.get_cov() / np.sqrt(var_x * var_y)
 
     def report(self):
         """
@@ -283,46 +316,50 @@ class TimeIndependentAutocorrelationCounter(TimeIndependentCounter):
         :param max_lag: maximum available lag (defaults to 10)
         """
         super(TimeIndependentAutocorrelationCounter, self).__init__(name)
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = max_lag
 
     def reset(self):
         """
         Reset the counter to its original state.
         """
         TimeIndependentCounter.reset(self)
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = 10
 
     def count(self, x):
         """
         Add new element x to counter.
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.values.append(x)
 
     def get_auto_cov(self, lag):
         """
         Calculate the auto covariance for a given lag.
         :return: auto covariance
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        shift = deque(self.values)
+        shift.rotate(lag)
+        prod = [x * y for x, y in zip(self.values, list(shift))]
+        return np.mean(prod) - np.mean(self.values) * np.mean(list(shift))
 
     def get_auto_cor(self, lag):
         """
         Calculate the auto correlation for a given lag.
         :return: auto correlation
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        shift = deque(self.values)
+        shift.rotate(lag)
+        var_x = np.var(self.values, ddof=1)
+        var_y = np.var(list(shift), ddof=1)
+        if (var_x != 0.0 and var_y != 0.0):
+            return self.get_auto_cov(lag) / np.sqrt(var_x * var_y)
+        else:
+            print(f'Warning, the variance is var_x = {var_x}, var_y = {var_y}')
 
     def set_max_lag(self, max_lag):
         """
         Change maximum lag. Cycle length is set to max_lag + 1.
         """
-        # TODO Task 4.1.2: Your code goes here
-        pass
+        self.max_lag = max_lag
 
     def report(self):
         """

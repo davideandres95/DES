@@ -1,11 +1,5 @@
-from __future__ import annotations
-
-from heapq import heappush, heappop
-from random import randint
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from simulation import Simulation
+import heapq
+import random
 
 
 class EventChain(object):
@@ -28,14 +22,14 @@ class EventChain(object):
         :param: e is of type SimEvent
 
         """
-        heappush(self.event_list, e)
+        heapq.heappush(self.event_list, e)
 
     def remove_oldest_event(self):
         """
-        Remove event with smallest timestamp (if timestamps are equal then smallest priority value i.e. highest priority event) from queue
+        Remove event with smallest timestamp (and priority) from queue
         :return: next event in event chain
         """
-        return heappop(self.event_list)
+        return heapq.heappop(self.event_list)
 
 
 class SimEvent(object):
@@ -52,7 +46,7 @@ class SimEvent(object):
         """
         self.timestamp = timestamp
         self.priority = 0
-        self.sim = sim  # type: Simulation
+        self.sim = sim
 
     def process(self):
         """
@@ -64,10 +58,12 @@ class SimEvent(object):
         """
         Comparison is made by comparing timestamps. If time stamps are equal, priorities are compared.
         """
-        if self.timestamp == other.timestamp:
+        if self.timestamp != other.timestamp:
+            return self.timestamp < other.timestamp
+        elif self.priority != other.priority:
             return self.priority < other.priority
         else:
-            return self.timestamp < other.timestamp
+            return self.priority < other.priority
 
 
 class CustomerArrival(SimEvent):
@@ -88,27 +84,28 @@ class CustomerArrival(SimEvent):
         """
         Processing procedure of a customer arrival.
 
-        Implement according to the task description.
+        First, the next customer arrival event is created
+        Second, the process tries to add the packet to the server, then to the queue, if necessary.
+        If packet is added to the server, a service completion event is generated.
+        Each customer is counted either as accepted or as dropped.
         """
+        ev = CustomerArrival(self.sim, self.sim.sim_state.now + self.sim.rng.get_iat() * 1000)
 
-        sys_state = self.sim.system_state
-        sim_state = self.sim.sim_state
-        event_chain = self.sim.event_chain
+        self.sim.event_chain.insert(ev)
 
-        ia_time = self.timestamp + self.sim.sim_param.IAT
+        if self.sim.system_state.add_packet_to_server():
+            # packet is added to server and served
+            ev = ServiceCompletion(
+                self.sim, self.sim.sim_state.now + self.sim.rng.get_st() * 1000)
+            self.sim.event_chain.insert(ev)
+            self.sim.sim_state.packet_accepted()
 
-        if sys_state.add_packet_to_server():  # Server is idle
-            sim_state.packet_accepted()
-            completion_time = self.timestamp + randint(1, 1000)
-            event_chain.insert(ServiceCompletion(sim=self.sim, timestamp=completion_time))
-        else:  # system is busy
-            if sys_state.add_packet_to_queue():  # Enqueue packet
-                sim_state.packet_accepted()
-            else:  # Drop packet
-                sim_state.packet_dropped()
-
-        # insert new CustomerArrival with IAT
-        event_chain.insert(CustomerArrival(sim=self.sim, timestamp=ia_time))
+        else:
+            if self.sim.system_state.add_packet_to_queue():
+                # packet is added to queue
+                self.sim.sim_state.packet_accepted()
+            else:
+                self.sim.sim_state.packet_dropped()
 
 
 class ServiceCompletion(SimEvent):
@@ -129,15 +126,16 @@ class ServiceCompletion(SimEvent):
         """
         Processing procedure of a service completion.
 
-        Implement according to the task description
+        First, the server is set from busy to idle.
+        Then, if the queue is not empty, the next packet is taken from the queue and served,
+        hence a new service completion event is created and inserted in the event chain.
         """
-        sys_state = self.sim.system_state
-        event_chain = self.sim.event_chain
-
-        sys_state.complete_service()
-        if sys_state.start_service():  # there are packets in the buffer
-            completion_time = self.timestamp + randint(1, 1000)
-            event_chain.insert(ServiceCompletion(sim=self.sim, timestamp=completion_time))
+        self.sim.system_state.complete_service()
+        if self.sim.system_state.start_service():
+            # trigger next packet
+            ev = ServiceCompletion(
+                self.sim, self.sim.sim_state.now + self.sim.rng.get_st() * 1000)
+            self.sim.event_chain.insert(ev)
 
 
 class SimulationTermination(SimEvent):
@@ -156,6 +154,6 @@ class SimulationTermination(SimEvent):
 
     def process(self):
         """
-        Implement according to the task description.
+        Simulation stop flag is set to true, so simulation is stopped after this event.
         """
         self.sim.sim_state.stop = True

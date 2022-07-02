@@ -1,4 +1,5 @@
 class SimState(object):
+
     """
     SimState contains the basic simulation state.
 
